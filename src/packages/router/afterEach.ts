@@ -13,7 +13,7 @@ let firstReload = true
 function updateCurrentRouter(to) {
     const appStore = appPinia()
     appStore.currentRouter = {...to}
-    if (to.meta.title === '登录') return
+    if (to.meta.title === '登录' || !to.meta.id) return
     const params = {
         MenuID: to.meta.id,
         UserID: appStore.userInfo.UserID

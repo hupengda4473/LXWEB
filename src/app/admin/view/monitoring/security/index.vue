@@ -40,24 +40,6 @@
                                 </n-tab-pane>
                                 <n-tab-pane name="数据操作">
                                     <n-space>
-                                        <n-button :color="btnConfig.add" v-if="compHandle.operation.isAdd" @click="compHandle.add()">
-                                            <template #icon v-if="btnConfig.showIco && btnConfig.ico.add">
-                                                <component
-                                                    class="ico"
-                                                    :is="renderIcon(btnConfig.ico.add)"
-                                                />
-                                            </template>
-                                            新增灌区
-                                        </n-button>
-                                        <n-button :color="btnConfig.del" v-if="compHandle.operation.isDelete" @click="compHandle.dels()">
-                                            <template #icon v-if="btnConfig.showIco && btnConfig.ico.del">
-                                                <component
-                                                    class="ico"
-                                                    :is="renderIcon(btnConfig.ico.del)"
-                                                />
-                                            </template>
-                                            删除灌区
-                                        </n-button>
                                         <n-button :color="btnConfig.exp" v-if="compHandle.operation.isExport" @click="compHandle.exportData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.exp">
                                                 <component
@@ -65,7 +47,7 @@
                                                     :is="renderIcon(btnConfig.ico.exp)"
                                                 />
                                             </template>
-                                            导出灌区
+                                            导出日志
                                         </n-button>
                                         <n-button :color="btnConfig.ref" :loading="compData.loading" @click="compHandle.getTableData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.ref">
@@ -139,10 +121,6 @@
                 </n-space>
             </n-grid-item>
         </n-grid>
-        <!-- 删除提示框 -->
-        <deleteModal ref="deleteModalRef"/>
-        <!-- 修改、新增抽屉 -->
-        <addModal ref="addModalRef" @refreshTable="compHandle.getTableData()"/>
     </div>
 </template>
 
@@ -151,19 +129,13 @@ import {onMounted, reactive, ref} from "vue"
 import {createColumns} from "./data.ts"
 import {deepCopy} from "@/packages/utils/utils.ts"
 import {tableSetting, btnConfig} from '@/app/admin/config/config.js'
-import {findAllIrrigateDistrict, deleteIrrigateDistrict} from '@/app/admin/api/irrigated'
 import appPinia from "@/packages/pinia/app"
 import { ExportTable } from '@/app/admin/untils/ExportTable'
 import {renderIcon} from '@/packages/config/icon.ts'
 import {Search} from "@/app/admin/untils/FuzzySearch"
-import {useMessage} from "naive-ui"
-import deleteModal from '@/app/admin/component/deleteModal.vue'
-import addModal from './add.vue'
+import {findAllLog} from "@/app/admin/api/security"
 
-const message = useMessage()
 const appStore = appPinia()
-const deleteModalRef = ref(null)
-const addModalRef = ref(null)
 const compData = reactive({
     showModal: false,
     introduction: '',
@@ -179,93 +151,48 @@ const compData = reactive({
     searchForm: {
         keyWord: '',
     },
-    rowKey: (row: any) => row.DistrictID,
+    rowKey: (row: any) => row.ID,
     checkedRowKeys: [],
 })
 const compHandle = reactive({
-    areaNameArr: [],
     filterArr: [],
     operation: {},
     getTableData() {
         compData.searchForm.keyWord = ''
         compData.loading = true
-        let params = {
-            PageSize: 999,
-            PageIndex: 1,
-            OrderField: "",
-            OrderType: "",
-            BeginDT: "",
-            EndDT: "",
-            FuzzyName: "",
-            UserID: 0
-        }
-        findAllIrrigateDistrict(params).then((res) => {
-            let data = res.data.Item1
+        findAllLog().then((res) => {
+            let data = res.data
             compData.tableData = data || []
             compData.allData = data || []
-            compHandle.areaNameArr = []
             compHandle.filterArr = []
             //表格过滤
             if (data && data.length > 0) {
                 for (let item of data) {
-                    if (!compHandle.areaNameArr.find(i => i.label === item.AreaName) && item.AreaName) {
-                        compHandle.areaNameArr.push({
-                            label: item.AreaName,
-                            value: item.AreaName
-                        })
-                    }
-                    if (!compHandle.filterArr.find(i => i.label === item.Principals) && item.Principals) {
+                    if (!compHandle.filterArr.find(i => i.value === item.UserName) && item.UserName) {
                         compHandle.filterArr.push({
-                            label: item.Principals,
-                            value: item.Principals
+                            label: item.UserName,
+                            value: item.UserName
                         })
                     }
                 }
             }
-
             initTable()
         }).finally(() => {
             compData.loading = false
         })
     },
-    introduction(row: any) {
-        compData.introduction = row.Introduction
-        compData.showModal = true
-    },
-    del(row: any) {
-        deleteItem(row.DistrictID)
-    },
-    dels() {
-        if (compData.checkedRowKeys.length <= 0){
-            return message.warning("请选择要删除的项")
-        }
-        let ids = compData.checkedRowKeys.join(',')
-        deleteModalRef.value.openDeleteModal('确认要删除所选灌区吗？',function deleteFun() {
-            deleteItem(ids)
-            compData.checkedRowKeys = []
-        })
-    },
-    edit(row: any) {
-        addModalRef.value.openModal({type: 'edit', itemData: row})
-    },
-    add() {
-        addModalRef.value.openModal({})
-    },
-    check(rowKeys: any) {
-        compData.checkedRowKeys = rowKeys
+    handleColumnsOptions(value: (string | number)[]) {
+        compData.columns = compData.sourceColumns.filter((item) => value.indexOf(item.key) !== -1)
     },
     tableSize() {
 
     },
-    handleColumnsOptions(value: (string | number)[]) {
-        compData.columns = compData.sourceColumns.filter((item) => value.indexOf(item.key) !== -1)
-    },
     search() {
-        let props = ['AreaName', 'DistrictName', 'Principals']
+        let props = ['ModuleName', 'StartTime', 'StopTime', 'AbnormalTime']
         compData.tableData  = Search(compData.searchForm.keyWord, props, deepCopy(compData.allData))
     },
     exportData() {
-        ExportTable(compData.allData, compData.columns, '灌区信息管理')
+        ExportTable(compData.allData, compData.columns, '安全日志')
     },
 })
 
@@ -284,23 +211,6 @@ const initTable = () => {
 //判断用户权限
 const determineUserPermissions = () => {
     compHandle.operation = appStore.currentRouter.meta.operation
-}
-
-//删除
-const deleteItem = (ids: string | number) => {
-    compData.loading = true
-    deleteIrrigateDistrict(ids).then(
-        res =>{
-            if (res.data.Code === 0){
-                message.warning("删除失败，请重试")
-            }else {
-                message.success("删除成功")
-                compHandle.getTableData()
-            }
-        }
-    ).finally(() => {
-        compData.loading = false
-    })
 }
 
 

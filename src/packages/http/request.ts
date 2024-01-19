@@ -1,11 +1,10 @@
 import axios, {AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig} from "axios"
 import axiosRetry from "axios-retry"
-import { Session } from '@/packages/utils/storage'
-import {requestUrl, SPECIAL_URL} from '@/app/admin/config/config'
+import router from "@/app/admin/router"
 import locaStore from "@/packages/utils/locaStore.ts"
 
 const http: AxiosInstance = axios.create({
-    baseURL: requestUrl,
+    baseURL: '',
     timeout: 50000,
     headers: { 'Content-Type': 'application/json' },
 })
@@ -19,12 +18,34 @@ axiosRetry(http, {
 http.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     const token = locaStore.get('token_lx_web')
     if (token) {
-        config.headers["Authorization"] = `token= ${token}`
+        config.headers["Authorization"] = `Bearer ${token}`
     }
     return config
 }, (error: AxiosError) => {
     return Promise.reject(error)
 })
+
+
+const codeErrorHandle = (resData) => {
+    switch (resData) {
+    case 404:
+        router.push({
+            name: 'error404'
+        })
+        break
+    case 403:
+        router.push({
+            name: 'error403'
+        })
+        break
+    case 500:
+        router.push({
+            name: 'error500'
+        })
+        break
+    default:
+    }
+}
 
 http.interceptors.response.use((response: AxiosResponse) => {
     const {code} = response.data
@@ -33,7 +54,12 @@ http.interceptors.response.use((response: AxiosResponse) => {
     }
     return response
 }, (error: AxiosError) => {
-    return Promise.reject(error)
+    console.log(error)
+    if (error.response.status === 500){
+        codeErrorHandle(error.response.status)
+    }else {
+        return Promise.reject(error)
+    }
 })
 
 const post = (url: string, params?: any, config?: AxiosRequestConfig) => {

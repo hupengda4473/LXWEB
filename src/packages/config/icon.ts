@@ -209,11 +209,11 @@ const icons = {
     Trash
 }
 
-function renderIcon(iconName: string) {
+function renderIcon(iconName: string, size?: number) {
     if (iconName.indexOf('ali-icon')!== -1){
-        return () => h(NIcon, {class: 'iconfont ' + iconName})
+        return () => h(NIcon, {class: 'iconfont ' + iconName, size: size})
     }else {
-        return () => h(NIcon, null, {default: () => h(icons[iconName])})
+        return () => h(NIcon, size ? {size: size} :null, {default: () => h(icons[iconName])})
     }
 }
 

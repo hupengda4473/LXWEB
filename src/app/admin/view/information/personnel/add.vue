@@ -4,7 +4,7 @@
             style="width: 500px;"
             header-style="text-align: center;"
             footer-style="text-align: center;"
-            :title="compData.type === 'add' ? '新增区域' : '编辑区域'"
+            :title="compData.type === 'add' ? '新增人员' : '编辑人员'"
             :bordered="false"
             size="huge"
             role="dialog"

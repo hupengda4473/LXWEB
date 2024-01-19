@@ -30,17 +30,6 @@
                         value-field="id"
                         children-field="children"
                     />
-                    <!--                    <n-tree-select-->
-                    <!--                        :options="drawerData.allData"-->
-                    <!--                        :default-value="formData.pid"-->
-                    <!--                        @update:value="handleUpdateValue"-->
-                    <!--                        :size="formSize"-->
-                    <!--                        check-strategy="child"-->
-                    <!--                        placeholder="请选择父级菜单"-->
-                    <!--                        label-field="title"-->
-                    <!--                        value-field="id"-->
-                    <!--                        children-field="children"-->
-                    <!--                    />-->
                 </n-form-item>
                 <n-form-item label="菜单路由" path="path">
                     <n-input v-model:value="formData.path" placeholder="请输入菜单路由"/>
@@ -53,7 +42,7 @@
                         <component
                             class="ico"
                             v-if="formData.icon"
-                            :is="renderIcon(formData.icon)"
+                            :is="renderIcon(formData.icon, 24)"
                         >
                         </component>
                         <n-input v-model:value="formData.icon" placeholder="请选择图标"/>
@@ -85,8 +74,9 @@
                                         size="24"
                                         :key="index"
                                         class="aliIco"
+                                        style="margin: 6px"
                                         :class="item === formData.icon ? 'active': ''"
-                                        :is="renderIcon(item)"
+                                        :is="renderIcon(item, 24)"
                                         @click="selectAliIco(item)"
                                     >
                                     </component>

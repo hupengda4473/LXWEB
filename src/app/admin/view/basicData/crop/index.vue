@@ -47,7 +47,7 @@
                                                     :is="renderIcon(btnConfig.ico.add)"
                                                 />
                                             </template>
-                                            新增灌区
+                                            新增作物
                                         </n-button>
                                         <n-button :color="btnConfig.del" v-if="compHandle.operation.isDelete" @click="compHandle.dels()">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.del">
@@ -56,7 +56,7 @@
                                                     :is="renderIcon(btnConfig.ico.del)"
                                                 />
                                             </template>
-                                            删除灌区
+                                            删除作物
                                         </n-button>
                                         <n-button :color="btnConfig.exp" v-if="compHandle.operation.isExport" @click="compHandle.exportData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.exp">
@@ -65,7 +65,7 @@
                                                     :is="renderIcon(btnConfig.ico.exp)"
                                                 />
                                             </template>
-                                            导出灌区
+                                            导出作物
                                         </n-button>
                                         <n-button :color="btnConfig.ref" :loading="compData.loading" @click="compHandle.getTableData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.ref">
@@ -151,7 +151,6 @@ import {onMounted, reactive, ref} from "vue"
 import {createColumns} from "./data.ts"
 import {deepCopy} from "@/packages/utils/utils.ts"
 import {tableSetting, btnConfig} from '@/app/admin/config/config.js'
-import {findAllIrrigateDistrict, deleteIrrigateDistrict} from '@/app/admin/api/irrigated'
 import appPinia from "@/packages/pinia/app"
 import { ExportTable } from '@/app/admin/untils/ExportTable'
 import {renderIcon} from '@/packages/config/icon.ts'
@@ -159,6 +158,7 @@ import {Search} from "@/app/admin/untils/FuzzySearch"
 import {useMessage} from "naive-ui"
 import deleteModal from '@/app/admin/component/deleteModal.vue'
 import addModal from './add.vue'
+import {deleteCrop, findAllCrop} from "@/app/admin/api/crop"
 
 const message = useMessage()
 const appStore = appPinia()
@@ -179,68 +179,55 @@ const compData = reactive({
     searchForm: {
         keyWord: '',
     },
-    rowKey: (row: any) => row.DistrictID,
+    rowKey: (row: any) => row.CropID,
     checkedRowKeys: [],
 })
 const compHandle = reactive({
-    areaNameArr: [],
     filterArr: [],
     operation: {},
     getTableData() {
         compData.searchForm.keyWord = ''
         compData.loading = true
         let params = {
-            PageSize: 999,
+            PageSize: 9999,
             PageIndex: 1,
             OrderField: "",
             OrderType: "",
             BeginDT: "",
             EndDT: "",
             FuzzyName: "",
-            UserID: 0
+            UserID: 1
         }
-        findAllIrrigateDistrict(params).then((res) => {
+        findAllCrop(params).then((res) => {
             let data = res.data.Item1
             compData.tableData = data || []
             compData.allData = data || []
-            compHandle.areaNameArr = []
             compHandle.filterArr = []
             //表格过滤
             if (data && data.length > 0) {
                 for (let item of data) {
-                    if (!compHandle.areaNameArr.find(i => i.label === item.AreaName) && item.AreaName) {
-                        compHandle.areaNameArr.push({
-                            label: item.AreaName,
-                            value: item.AreaName
-                        })
-                    }
-                    if (!compHandle.filterArr.find(i => i.label === item.Principals) && item.Principals) {
+                    if (!compHandle.filterArr.find(i => i.value === item.CropType)) {
                         compHandle.filterArr.push({
-                            label: item.Principals,
-                            value: item.Principals
+                            label: item.CropType === 0 ? '高耗水作物' : '低耗水作物',
+                            value: item.CropType
                         })
                     }
                 }
             }
-
             initTable()
         }).finally(() => {
             compData.loading = false
         })
     },
-    introduction(row: any) {
-        compData.introduction = row.Introduction
-        compData.showModal = true
-    },
     del(row: any) {
-        deleteItem(row.DistrictID)
+        deleteItem(row.CropID)
     },
     dels() {
         if (compData.checkedRowKeys.length <= 0){
             return message.warning("请选择要删除的项")
         }
         let ids = compData.checkedRowKeys.join(',')
-        deleteModalRef.value.openDeleteModal('确认要删除所选灌区吗？',function deleteFun() {
+        deleteModalRef.value.openDeleteModal('确认要删除所选作物吗？',function deleteFun() {
             deleteItem(ids)
             compData.checkedRowKeys = []
         })
@@ -261,11 +248,11 @@ const compHandle = reactive({
         compData.columns = compData.sourceColumns.filter((item) => value.indexOf(item.key) !== -1)
     },
     search() {
-        let props = ['AreaName', 'DistrictName', 'Principals']
+        let props = ['CropName', 'WaterQuota', 'BeginDT', 'EndDT']
         compData.tableData  = Search(compData.searchForm.keyWord, props, deepCopy(compData.allData))
     },
     exportData() {
-        ExportTable(compData.allData, compData.columns, '灌区信息管理')
+        ExportTable(compData.allData, compData.columns, '作物管理')
     },
 })
 
@@ -289,7 +276,7 @@ const determineUserPermissions = () => {
 //删除
 const deleteItem = (ids: string | number) => {
     compData.loading = true
-    deleteIrrigateDistrict(ids).then(
+    deleteCrop(ids).then(
         res =>{
             if (res.data.Code === 0){
                 message.warning("删除失败，请重试")

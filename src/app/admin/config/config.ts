@@ -1,15 +1,6 @@
 import {reactive} from "vue"
 
-const env = import.meta.env
-let apiServer
-if (env.PROD) {
-    apiServer = 'http://60.2.176.226:12017'
-} else {
-    apiServer = 'http://localhost:59966'
-}
-export const requestUrl = apiServer
-export const SPECIAL_URL = 'http://192.168.10.81:6190'
-
+export const requestUrl = 'http://localhost:59966'
 
 /*
 表单大小*/
@@ -139,5 +130,33 @@ export const deviceType = [
     {label: '流量', value: 'Flow'},
     {label: '雨量', value: 'Rain'},
     {label: '视频', value: 'Video'},
+]
+
+/*
+* 灌季
+* */
+export const IrrigateSeasonList = [
+    {label: '春灌', value: '春灌'},
+    {label: '夏灌', value: '夏灌'},
+    {label: '秋灌', value: '秋灌'},
+    {label: '冬灌', value: '冬灌'},
+]
+
+/*
+* 轮次
+* */
+export const roundList = [
+    {label: '第1轮', value: '1'},
+    {label: '第2轮', value: '2'},
+    {label: '第3轮', value: '3'},
+    {label: '第4轮', value: '4'},
+    {label: '第5轮', value: '5'},
+    {label: '第6轮', value: '6'},
+    {label: '第7轮', value: '7'},
+    {label: '第8轮', value: '8'},
+    {label: '第9轮', value: '9'},
+    {label: '第10轮', value: '10'},
+    {label: '第11轮', value: '11'},
+    {label: '第12轮', value: '12'},
 ]
 

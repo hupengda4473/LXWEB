@@ -7,6 +7,7 @@ import {viteMockServe} from "vite-plugin-mock"
 import setupConfig from "./config"
 import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js"
 import viteCompression from "vite-plugin-compression"
+import {requestUrl} from './src/app/admin/config/config'
 
 export default ({mode}: { mode: any }) => {
     const {build} = setupConfig({mode})
@@ -51,10 +52,10 @@ export default ({mode}: { mode: any }) => {
                 //     target: "https://vite.itnavs.com/",
                 //     changeOrigin: true,
                 // },
-                //  "/api": {
-                //      target: "https://localhost:59966",
-                //      changeOrigin: true,
-                //  },
+                "/api": {
+                    target: requestUrl,
+                    changeOrigin: true,
+                },
                 "^/bic": {
                     target: "https://api.vipbic.com/",
                     changeOrigin: true,

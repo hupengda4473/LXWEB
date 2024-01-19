@@ -52,6 +52,26 @@ Date.prototype.format = function (fmt) {
  console.log(new Date(1606379756309).format("yyyy-M-d h:m:s.S"))
  console.log(new Date(1606379756309).format("yyyy年M月d日 h时m分s秒S毫秒"))*/
 
+export const getFormatTime = (second_time) => {
+    let time = parseInt(second_time) + "秒"
+    if( parseInt(second_time )> 60){
+        const second = parseInt(second_time) % 60
+        let min = parseInt(String(second_time / 60))
+        time = min + "分" + second + "秒"
+        if( min > 60 ){
+            min = parseInt(String(second_time / 60)) % 60
+            let hour = parseInt(String(parseInt(String(second_time / 60)) / 60))
+            time = hour + "小时" + min + "分" + second + "秒"
+            if( hour > 24 ){
+                hour = parseInt( String(parseInt(String(second_time / 60)) / 60) ) % 24
+                const day = parseInt(String(parseInt(String(parseInt(String(second_time / 60)) / 60)) / 24))
+                time = day + "天" + hour + "小时" + min + "分" + second + "秒"
+            }
+        }
+    }
+    return time
+}
+
 /*
 * 获取问候语
 * */

@@ -47,7 +47,7 @@
                                                     :is="renderIcon(btnConfig.ico.add)"
                                                 />
                                             </template>
-                                            新增灌区
+                                            新增渠道
                                         </n-button>
                                         <n-button :color="btnConfig.del" v-if="compHandle.operation.isDelete" @click="compHandle.dels()">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.del">
@@ -56,7 +56,7 @@
                                                     :is="renderIcon(btnConfig.ico.del)"
                                                 />
                                             </template>
-                                            删除灌区
+                                            删除渠道
                                         </n-button>
                                         <n-button :color="btnConfig.exp" v-if="compHandle.operation.isExport" @click="compHandle.exportData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.exp">
@@ -65,7 +65,7 @@
                                                     :is="renderIcon(btnConfig.ico.exp)"
                                                 />
                                             </template>
-                                            导出灌区
+                                            导出渠道
                                         </n-button>
                                         <n-button :color="btnConfig.ref" :loading="compData.loading" @click="compHandle.getTableData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.ref">
@@ -152,6 +152,7 @@ import {createColumns} from "./data.ts"
 import {deepCopy} from "@/packages/utils/utils.ts"
 import {tableSetting, btnConfig} from '@/app/admin/config/config.js'
 import {findAllIrrigateDistrict, deleteIrrigateDistrict} from '@/app/admin/api/irrigated'
+import {findAllChannel, deleteChannel} from '@/app/admin/api/channel'
 import appPinia from "@/packages/pinia/app"
 import { ExportTable } from '@/app/admin/untils/ExportTable'
 import {renderIcon} from '@/packages/config/icon.ts'
@@ -179,45 +180,47 @@ const compData = reactive({
     searchForm: {
         keyWord: '',
     },
-    rowKey: (row: any) => row.DistrictID,
+    rowKey: (row: any) => row.ChannelID,
     checkedRowKeys: [],
 })
 const compHandle = reactive({
-    areaNameArr: [],
+    DepartName: [],
     filterArr: [],
     operation: {},
     getTableData() {
         compData.searchForm.keyWord = ''
         compData.loading = true
-        let params = {
-            PageSize: 999,
-            PageIndex: 1,
-            OrderField: "",
-            OrderType: "",
-            BeginDT: "",
-            EndDT: "",
-            FuzzyName: "",
-            UserID: 0
-        }
-        findAllIrrigateDistrict(params).then((res) => {
+        // let params = {
+        //     PageSize: 999,
+        //     PageIndex: 1,
+        //     OrderField: "",
+        //     OrderType: "",
+        //     BeginDT: "",
+        //     EndDT: "",
+        //     FuzzyName: "",
+        //     UserID: 0
+        // }
+        findAllChannel().then((res) => {
             let data = res.data.Item1
             compData.tableData = data || []
             compData.allData = data || []
-            compHandle.areaNameArr = []
-            compHandle.filterArr = []
+            compHandle.DepartName = []
+            compHandle.filterArr = [
+                {label: '无上级', value: null}
+            ]
             //表格过滤
             if (data && data.length > 0) {
                 for (let item of data) {
-                    if (!compHandle.areaNameArr.find(i => i.label === item.AreaName) && item.AreaName) {
-                        compHandle.areaNameArr.push({
-                            label: item.AreaName,
-                            value: item.AreaName
+                    if (!compHandle.DepartName.find(i => i.label === item.DepartName) && item.DepartName) {
+                        compHandle.DepartName.push({
+                            label: item.DepartName,
+                            value: item.DepartName
                         })
                     }
-                    if (!compHandle.filterArr.find(i => i.label === item.Principals) && item.Principals) {
+                    if (!compHandle.filterArr.find(i => i.label === item.PidChannelName) && item.PidChannelName) {
                         compHandle.filterArr.push({
-                            label: item.Principals,
-                            value: item.Principals
+                            label: item.PidChannelName,
+                            value: item.PidChannelName
                         })
                     }
                 }
@@ -240,7 +243,7 @@ const compHandle = reactive({
             return message.warning("请选择要删除的项")
         }
         let ids = compData.checkedRowKeys.join(',')
-        deleteModalRef.value.openDeleteModal('确认要删除所选灌区吗？',function deleteFun() {
+        deleteModalRef.value.openDeleteModal('确认要删除所选渠道吗？',function deleteFun() {
             deleteItem(ids)
             compData.checkedRowKeys = []
         })
@@ -261,11 +264,11 @@ const compHandle = reactive({
         compData.columns = compData.sourceColumns.filter((item) => value.indexOf(item.key) !== -1)
     },
     search() {
-        let props = ['AreaName', 'DistrictName', 'Principals']
+        let props = ['ChannelName', 'ChannelNo', 'DepartName', 'PidChannelName']
         compData.tableData  = Search(compData.searchForm.keyWord, props, deepCopy(compData.allData))
     },
     exportData() {
-        ExportTable(compData.allData, compData.columns, '灌区信息管理')
+        ExportTable(compData.allData, compData.columns, '渠道管理')
     },
 })
 
@@ -289,7 +292,7 @@ const determineUserPermissions = () => {
 //删除
 const deleteItem = (ids: string | number) => {
     compData.loading = true
-    deleteIrrigateDistrict(ids).then(
+    deleteChannel(ids).then(
         res =>{
             if (res.data.Code === 0){
                 message.warning("删除失败，请重试")

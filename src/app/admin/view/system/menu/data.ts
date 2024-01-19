@@ -1,7 +1,7 @@
 import {DataTableColumns, NButton, NPopconfirm, NSwitch, NIcon} from "naive-ui"
 import {h} from "vue"
 import { getPower } from '@/app/admin/untils/untils.ts'
-import {FilterOutlined, InstagramOutlined} from "@vicons/antd"
+import {renderIcon} from '@/packages/config/icon.ts'
 
 const createColumns = ({compHandle}): DataTableColumns => {
     const arr =  [
@@ -79,7 +79,10 @@ const createColumns = ({compHandle}): DataTableColumns => {
             title: "图标",
             key: "icon",
             align: "center",
-            ellipsis: true
+            ellipsis: true,
+            render(row: any) {
+                return h(renderIcon(row.icon, 22))
+            }
         },
         compHandle.operation.isUpdate ?
         {
@@ -102,12 +105,6 @@ const createColumns = ({compHandle}): DataTableColumns => {
                 let status = (value === 1 ? true : false)
                 return row.shows === status
             },
-            // renderFilterIcon () {
-            //     return h(NIcon, {
-            //         size: 14,
-            //         component: FilterOutlined
-            //     })
-            // },
             sorter (rowA) {
                 return rowA.shows
             },

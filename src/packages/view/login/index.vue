@@ -66,7 +66,6 @@ const handleLogin = (e: MouseEvent) => {
                 locaStore.set("userId_lx_web", Message.UserID, 86400)
                 router.push("/home")
             })
-        } else {
         }
     })
 }

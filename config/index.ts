@@ -10,8 +10,8 @@ export default function setupConfig({mode}: { mode: any }) {
         build.outDir = path.resolve(process.cwd(), "lib")
         build.lib = {
             entry: path.resolve(process.cwd(), "src/packages/install.vue"),
-            name: "BagAdmin", // 构建依赖包的时候， 对外暴露的名称
-            fileName: "bag-admin",
+            name: "LX_WEB", // 构建依赖包的时候， 对外暴露的名称
+            fileName: "LX_WEB",
             formats: ["es", "umd"]
         }
         build.rollupOptions = {
