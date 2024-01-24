@@ -1,4 +1,4 @@
-import {DataTableColumns, NButton, NPopconfirm} from "naive-ui"
+import {DataTableColumns, NButton, NPopconfirm, NImage} from "naive-ui"
 import {h} from "vue"
 
 const createColumns = ({compHandle}): DataTableColumns => {
@@ -7,50 +7,103 @@ const createColumns = ({compHandle}): DataTableColumns => {
             type: "selection",
         },
         {
-            title: "组织名称",
-            key: "AssociationName",
+            title: "取水证编码",
+            key: "Code",
             align: "center",
             defaultSortOrder: 'descend',
             sorter: 'default',
         },
         {
-            title: "年度",
-            key: "DT",
+            title: "取水权人名称",
+            key: "HolderName",
+            align: "center",
+            sorter: 'default',
+        },
+        {
+            title: "取水地点",
+            key: "FetchWaterAddress",
+            align: "center",
+            sorter: 'default',
+        },
+        {
+            title: "取水方式",
+            key: "FetchWaterType",
             align: "center",
             sorter: 'default',
             defaultFilterOptionValues: [],
             filterOptions: compHandle.filterArr.length > 0 ? compHandle.filterArr : null,
             filter (value, row) {
-                return row.DT == value
+                return row.FetchWaterType == value
             },
         },
         {
-            title: "平均毛定额（m³/亩）",
-            key: "Indicator",
-            align: "center",
-            sorter: 'default',
-        },
-        {
-            title: "确权面积(亩)",
-            key: "PlantArea",
-            align: "center",
-            sorter: 'default',
-        },
-        {
-            title: "确权水量（m³）",
-            key: "PlantArea",
+            title: "取水量（万m³）",
+            key: "FetchWaterQuantity",
             align: "center",
             sorter: 'default',
             render(row: any) {
-                return (row.Indicator * row.PlantArea).toFixed(2)
+                return (row.FetchWaterQuantity * 1).toFixed(2)
             }
         },
         {
-            title: "备注",
-            key: "Remark",
+            title: "起始时间",
+            key: "BeginDT",
             align: "center",
             defaultSortOrder: 'descend',
             sorter: 'default',
+            render(row: any) {
+                return new Date(row.BeginDT).format('yyyy-MM-dd')
+            }
+        },
+        {
+            title: "结束时间",
+            key: "EndDT",
+            align: "center",
+            defaultSortOrder: 'descend',
+            sorter: 'default',
+            render(row: any) {
+                return new Date(row.EndDT).format('yyyy-MM-dd')
+            }
+        },
+        {
+            title: "发证日期",
+            key: "ApprovalDT",
+            align: "center",
+            defaultSortOrder: 'descend',
+            sorter: 'default',
+            render(row: any) {
+                return new Date(row.ApprovalDT).format('yyyy-MM-dd')
+            }
+        },
+        {
+            title: "取水证",
+            key: "ApprovalDT",
+            align: "center",
+            defaultSortOrder: 'descend',
+            sorter: 'default',
+            render(row) {
+                // return h("div", [
+                //     h(NButton,
+                //         {
+                //             type: "info",
+                //             size: "small",
+                //             quaternary : true,
+                //             onClick: () => compHandle.introduction(row),
+                //         },
+                //         {default: () => "查看取水证"}
+                //     )
+                // ])
+                return h("div", [
+                    h(NImage,
+                        {
+                            height: "20",
+                            alt: '点击预览',
+                            lazy: true,
+                            src: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg'
+                        },
+                    )
+                ])
+            }
         },
         compHandle.operation.isUpdate || compHandle.operation.isDelete ?
         {

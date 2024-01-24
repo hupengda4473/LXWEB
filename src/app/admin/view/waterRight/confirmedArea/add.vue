@@ -18,14 +18,33 @@
                 :model="compData.data"
                 :rules="rules"
             >
-                <n-form-item label="组织名称" path="AssociationName">
-                    <n-input clearable v-model:value="compData.data.AssociationName" type="text" placeholder="请输入组织名称" />
+                <n-form-item label="组织名称" path="AssociationID">
+                    <n-select
+                        v-model:value="compData.data.AssociationID"
+                        filterable
+                        clearable
+                        label-field="AssociationName"
+                        value-field="ID"
+                        placeholder="请选择组织名称"
+                        :options="compData.generalOptions"
+                    />
                 </n-form-item>
-                <n-form-item label="负责人" path="Manager">
-                    <n-input clearable v-model:value="compData.data.Manager" type="text" placeholder="请输入负责人" />
+                <n-form-item label="年份" path="DT">
+                    <n-date-picker v-model:value="compData.data.DT" type="year" clearable placeholder="请选择年份" style="width: 100%" />
                 </n-form-item>
-                <n-form-item label="联系方式" path="Tel">
-                    <n-input clearable v-model:value="compData.data.Tel" type="text" placeholder="请输入联系方式" />
+                <n-form-item label="确权面积" path="PlantArea">
+                    <n-input-number clearable v-model:value="compData.data.PlantArea" type="text" placeholder="请输入确权面积" style="width: 100%">
+                        <template #suffix>
+                            亩
+                        </template>
+                    </n-input-number>
+                </n-form-item>
+                <n-form-item label="平均毛定额" path="Indicator">
+                    <n-input-number clearable v-model:value="compData.data.Indicator" type="text" placeholder="请输入平均毛定额" style="width: 100%">
+                        <template #suffix>
+                            m³/亩
+                        </template>
+                    </n-input-number>
                 </n-form-item>
                 <n-form-item label="备注" path="Remark">
                     <n-input clearable v-model:value="compData.data.Remark" type="textarea" placeholder="请输入备注" />
@@ -45,19 +64,21 @@
 </template>
 
 <script setup lang="ts">
-import {defineEmits, defineExpose, reactive, ref} from "vue"
+import {defineEmits, defineExpose, onMounted, reactive, ref} from "vue"
 import {FormInst, useMessage} from "naive-ui"
 import {deepCopy} from "@/packages/utils/utils"
 import {formSize} from '@/app/admin/config/config'
-import {AddWaterAssociation, ModifyWaterAssociation} from "@/app/admin/api/WaterAssociation"
+import { FindAllWaterAssociation} from "@/app/admin/api/WaterAssociation"
+import {AddWaterAssociationRight, ModifyWaterAssociationRight} from "@/app/admin/api/confirmedArea"
 
 const message = useMessage()
 
 type AddParams = {
     ID: string | number,
-    AssociationName: string,
-    Manager: string,
-    Tel: string,
+    AssociationID: string | number,
+    PlantArea: any,
+    Indicator: any,
+    DT: any,
     Remark: string,
 }
 type Song = {
@@ -72,34 +93,31 @@ const compData = reactive<Song>({
     generalOptions: [],
     data: {
         ID: 0,
-        AssociationName: '',
-        Manager: '',
-        Tel: '',
+        AssociationID: '',
+        DT: new Date().getTime(),
+        PlantArea: '',
+        Indicator: '',
         Remark: '',
     },
 })
 
 const rules = {
-    AssociationName: {
+    AssociationID: {
         required: true,
-        message: '请输入组织名称',
-        trigger: ['input', 'blur']
+        message: '请选择组织名称',
     },
-    Manager: {
+    DT: {
         required: true,
-        message: '请输入负责人',
-        trigger: ['input', 'blur']
+        message: '请选择年份',
     },
-    Tel: {
+    PlantArea: {
         required: true,
-        message: '请输入联系方式',
-        trigger: ['input', 'blur']
+        message: '请输入确权面积',
     },
-    // Remark: {
-    //     required: true,
-    //     message: '请输入备注',
-    //     trigger: ['input', 'blur']
-    // },
+    Indicator: {
+        required: true,
+        message: '请输入平均毛定额',
+    },
 }
 
 const openModal = ({type = 'add', itemData = {}}: { type?: string; itemData?: object }) => {
@@ -107,13 +125,16 @@ const openModal = ({type = 'add', itemData = {}}: { type?: string; itemData?: ob
     compData.type = type
     compData.data = {
         ID: 0,
-        AssociationName: '',
-        Manager: '',
-        Tel: '',
+        AssociationID: '',
+        DT: new Date().getTime(),
+        PlantArea: null,
+        Indicator: null,
         Remark: '',
     }
     if (type === 'edit') {
-        compData.data = deepCopy(itemData)
+        let data = deepCopy(itemData)
+        compData.data = data
+        compData.data.DT = new Date(data.DT + '-01-01').getTime()
     }
 }
 
@@ -124,8 +145,10 @@ const drawerConfirm = (e: MouseEvent) => {
     e.preventDefault()
     formRef.value?.validate((errors) => {
         if (!errors) {
+            let params = compData.data
+            params.DT = new Date(compData.data.DT).getFullYear()
             if (compData.type === 'add') {
-                AddWaterAssociation( compData.data ).then(res => {
+                AddWaterAssociationRight( params ).then(res => {
                     if (res.data.Code === 0) {
                         message.warning("新增失败，请重试")
                     } else {
@@ -135,7 +158,7 @@ const drawerConfirm = (e: MouseEvent) => {
                     }
                 })
             } else {
-                ModifyWaterAssociation( compData.data ).then(res => {
+                ModifyWaterAssociationRight( params ).then(res => {
                     if (res.data.Code === 0) {
                         message.warning("修改失败，请重试")
                     } else {
@@ -149,7 +172,16 @@ const drawerConfirm = (e: MouseEvent) => {
     })
 }
 
+const getWaterAssociation = () => {
+    FindAllWaterAssociation().then(res => {
+        compData.generalOptions = res.data
+    })
+}
+
 defineExpose({
     openModal,
+})
+onMounted(()=>{
+    getWaterAssociation()
 })
 </script>

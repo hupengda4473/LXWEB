@@ -1,16 +1,15 @@
 <template>
     <n-modal :loading="compData.loading" v-model:show="compData.showAddModal">
         <n-card
-            style="width: auto;"
+            style="max-width: 50%"
             header-style="text-align: center;"
             title="分配权限"
             :bordered="false"
-            size="huge"
-            role="dialog"
             aria-modal="true"
         >
             <n-data-table
                 size="small"
+                max-height="600"
                 :columns="compData.columns"
                 :data="compData.treeMenu"
                 :row-key="compData.rowKey"

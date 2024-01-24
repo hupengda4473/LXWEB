@@ -24,8 +24,13 @@
                 <n-form-item label="作物类型" path="CropType">
                     <n-select filterable v-model:value="compData.data.CropType" :options="compData.CropTypeList" placeholder="请选择作物类型" />
                 </n-form-item>
-                <n-form-item label="需水定额(m³)" path="WaterQuota">
-                    <n-input clearable v-model:value="compData.data.WaterQuota" type="text" placeholder="请输入需水定额" />
+                <n-form-item label="需水定额" path="WaterQuota">
+<!--                    <n-input clearable v-model:value="compData.data.WaterQuota" type="text" placeholder="请输入需水定额" />-->
+                    <n-input-number clearable v-model:value="compData.data.WaterQuota" type="text" placeholder="请输入需水定额" style="width: 100%">
+                        <template #suffix>
+                            m³
+                        </template>
+                    </n-input-number>
                 </n-form-item>
                 <n-form-item label="浇灌起止时间" path="rang">
                     <n-date-picker
@@ -64,7 +69,7 @@ type AddParams = {
     rang: any [],
     CropName: string,
     CropType: string | number,
-    WaterQuota: string | number,
+    WaterQuota: any,
 }
 type CropTyp = {
     label: string,
@@ -107,7 +112,6 @@ const rules = {
     WaterQuota: {
         required: true,
         message: '请输入需水定额',
-        trigger: ['input', 'blur']
     },
     rang: {
         required: true,
@@ -123,7 +127,7 @@ const openModal = ({type = 'add', itemData = {}}: { type?: string; itemData?: ob
         rang: [Date.now(), Date.now()],
         CropName: '',
         CropType: '',
-        WaterQuota: '',
+        WaterQuota: null,
     }
     if (type === 'edit') {
         let data = deepCopy(itemData)

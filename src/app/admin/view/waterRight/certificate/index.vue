@@ -16,11 +16,6 @@
                                     <n-form style="margin-bottom: -24px" label-placement="left" label-align="right" :show-label="true" ref="searchFormRef" inline :model="compData.searchForm">
                                         <n-grid cols="24" x-gap="30" item-responsive responsive="screen">
                                             <n-grid-item span="24 m:6 l:6">
-                                                <n-form-item label="选择时间：" path="keyWord">
-                                                    <n-date-picker v-model:value="compData.searchForm.time" type="year" clearable style="width: 100%" />
-                                                </n-form-item>
-                                            </n-grid-item>
-                                            <n-grid-item span="24 m:6 l:6">
                                                 <n-form-item label="模糊搜索：" path="keyWord">
                                                     <n-input clearable v-model:value="compData.searchForm.keyWord" placeholder="请输入关键字"/>
                                                 </n-form-item>
@@ -52,7 +47,7 @@
                                                     :is="renderIcon(btnConfig.ico.add)"
                                                 />
                                             </template>
-                                            新增
+                                            新增取水证
                                         </n-button>
                                         <n-button :color="btnConfig.del" v-if="compHandle.operation.isDelete" @click="compHandle.dels()">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.del">
@@ -61,7 +56,7 @@
                                                     :is="renderIcon(btnConfig.ico.del)"
                                                 />
                                             </template>
-                                            删除
+                                            删除取水证
                                         </n-button>
                                         <n-button :color="btnConfig.exp" v-if="compHandle.operation.isExport" @click="compHandle.exportData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.exp">
@@ -70,7 +65,7 @@
                                                     :is="renderIcon(btnConfig.ico.exp)"
                                                 />
                                             </template>
-                                            导出
+                                            导出取水证
                                         </n-button>
                                         <n-button :color="btnConfig.ref" :loading="compData.loading" @click="compHandle.getTableData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.ref">
@@ -163,7 +158,7 @@ import {Search} from "@/app/admin/untils/FuzzySearch"
 import {useMessage} from "naive-ui"
 import DeleteModal from '@/app/admin/component/deleteModal.vue'
 import AddModal from './add.vue'
-import {DeleteWaterAssociationRight, FindWaterAssociationRight} from "@/app/admin/api/confirmedArea"
+import {DeleteWaterLicense, FindAllWaterLicense} from "@/app/admin/api/WaterLicense"
 
 const message = useMessage()
 const appStore = appPinia()
@@ -181,7 +176,6 @@ const compData = reactive({
     columnsOptionsValue: [],
     searchForm: {
         keyWord: '',
-        time: new Date().getTime(),
     },
     rowKey: (row: any) => row.ID,
     checkedRowKeys: [],
@@ -191,32 +185,29 @@ const compHandle = reactive({
     operation: {},
     getTableData() {
         compData.loading = true
-        // and DT=2023
-        let str = ''
-        if (compData.searchForm.time){
-            str = 'and DT=' + new Date(compData.searchForm.time).getFullYear()
-        }
-        FindWaterAssociationRight(str).then((res) => {
+        FindAllWaterLicense().then((res) => {
             let data = res.data
             compData.allData = data || []
+            compData.tableData = data || []
             compHandle.filterArr = []
             // 表格过滤
             if (data && data.length > 0) {
                 for (let item of data) {
-                    if (!compHandle.filterArr.find(i => i.label === item.DT) && item.DT) {
+                    if (!compHandle.filterArr.find(i => i.label === item.FetchWaterType) && item.FetchWaterType) {
                         compHandle.filterArr.push({
-                            label: item.DT,
-                            value: item.DT
+                            label: item.FetchWaterType,
+                            value: item.FetchWaterType
                         })
                     }
                 }
             }
-            let props = ['AssociationName', 'DT', 'Indicator', 'Remark', 'PlantArea']
-            compData.tableData  = Search(compData.searchForm.keyWord, props, deepCopy(compData.allData))
             initTable()
         }).finally(() => {
             compData.loading = false
         })
+    },
+    introduction(row: any) {
+        console.log(row)
     },
     del(row: any) {
         deleteItem(row.ID)
@@ -247,7 +238,8 @@ const compHandle = reactive({
         compData.columns = compData.sourceColumns.filter((item) => value.indexOf(item.key) !== -1)
     },
     search() {
-        compHandle.getTableData()
+        let props = ['Code', 'BeginDT', 'EndDT', 'ApprovalDT', 'HolderName', 'FetchWaterAddress', 'FetchWaterQuantity']
+        compData.tableData = Search(compData.searchForm.keyWord, props, deepCopy(compData.allData))
     },
     exportData() {
         ExportTable(compData.allData, compData.columns, '确权面积')
@@ -274,7 +266,7 @@ const determineUserPermissions = () => {
 //删除
 const deleteItem = (ids: string | number) => {
     compData.loading = true
-    DeleteWaterAssociationRight(ids).then(
+    DeleteWaterLicense(ids).then(
         res =>{
             if (res.data.Code === 0){
                 message.warning("删除失败，请重试")
