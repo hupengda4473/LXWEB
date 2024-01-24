@@ -47,7 +47,7 @@
                                                     :is="renderIcon(btnConfig.ico.add)"
                                                 />
                                             </template>
-                                            新增渠道
+                                            新增
                                         </n-button>
                                         <n-button :color="btnConfig.del" v-if="compHandle.operation.isDelete" @click="compHandle.dels()">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.del">
@@ -56,7 +56,7 @@
                                                     :is="renderIcon(btnConfig.ico.del)"
                                                 />
                                             </template>
-                                            删除渠道
+                                            删除
                                         </n-button>
                                         <n-button :color="btnConfig.exp" v-if="compHandle.operation.isExport" @click="compHandle.exportData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.exp">
@@ -65,7 +65,7 @@
                                                     :is="renderIcon(btnConfig.ico.exp)"
                                                 />
                                             </template>
-                                            导出渠道
+                                            导出
                                         </n-button>
                                         <n-button :color="btnConfig.ref" :loading="compData.loading" @click="compHandle.getTableData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.ref">
@@ -140,11 +140,9 @@
             </n-grid-item>
         </n-grid>
         <!-- 删除提示框 -->
-        <deleteModal ref="deleteModalRef"/>
-        <!-- 修改、新增 -->
-        <addModal ref="addModalRef" @refreshTable="compHandle.getTableData()"/>
-        <!-- 详情 -->
-        <Details ref="DetailsRef"/>
+        <DeleteModal ref="deleteModalRef"/>
+        <!-- 修改、新增抽屉 -->
+        <AddModal ref="addModalRef" @refreshTable="compHandle.getTableData()"/>
     </div>
 </template>
 
@@ -152,25 +150,23 @@
 import {onMounted, reactive, ref} from "vue"
 import {createColumns} from "./data.ts"
 import {deepCopy} from "@/packages/utils/utils.ts"
-import {tableSetting, btnConfig, channelType} from '@/app/admin/config/config.js'
-import {findAllChannel, deleteChannel} from '@/app/admin/api/channel'
+import {tableSetting, btnConfig} from '@/app/admin/config/config.js'
 import appPinia from "@/packages/pinia/app"
 import { ExportTable } from '@/app/admin/untils/ExportTable'
 import {renderIcon} from '@/packages/config/icon.ts'
 import {Search} from "@/app/admin/untils/FuzzySearch"
 import {useMessage} from "naive-ui"
-import deleteModal from '@/app/admin/component/deleteModal.vue'
-import addModal from './add.vue'
-import Details from './details.vue'
+import DeleteModal from '@/app/admin/component/deleteModal.vue'
+import AddModal from './add.vue'
+import {DeleteWaterAssociation, FindAllWaterAssociation} from "@/app/admin/api/WaterAssociation"
 
 const message = useMessage()
 const appStore = appPinia()
 const deleteModalRef = ref(null)
 const addModalRef = ref(null)
 const DetailsRef = ref(null)
+const ViewRef = ref(null)
 const compData = reactive({
-    showModal: false,
-    introduction: '',
     allData: [],
     tableData: [],
     tableSizeValue: tableSetting.tableSizeValue,
@@ -183,90 +179,60 @@ const compData = reactive({
     searchForm: {
         keyWord: '',
     },
-    rowKey: (row: any) => row.ChannelID,
+    rowKey: (row: any) => row.ID,
     checkedRowKeys: [],
 })
 const compHandle = reactive({
-    PidChannelName: [],
     filterArr: [],
-    manage: [],
     operation: {},
     getTableData() {
         compData.searchForm.keyWord = ''
         compData.loading = true
-        let params = {
-            PageSize: 999,
-            PageIndex: 1,
-            OrderField: "",
-            OrderType: "",
-            BeginDT: "",
-            EndDT: "",
-            FuzzyName: "",
-            UserID: 0
-        }
-        findAllChannel(params).then((res) => {
-            let data = res.data.Item1
+        FindAllWaterAssociation().then((res) => {
+            let data = res.data
             compData.tableData = data || []
             compData.allData = data || []
-            compHandle.PidChannelName = [
-                {label: '无上级', value: 0}
-            ]
             compHandle.filterArr = []
-            compHandle.manage = []
-            //表格过滤
+            // 表格过滤
             if (data && data.length > 0) {
                 for (let item of data) {
-                    if (!compHandle.PidChannelName.find(i => i.value === item.Pid) && item.Pid) {
-                        compHandle.PidChannelName.push({
-                            label: item.PidChannelName,
-                            value: item.Pid
-                        })
-                    }
-                    if (!compHandle.manage.find(i => i.value === item.DepartName) && item.DepartName) {
-                        compHandle.manage.push({
-                            label: item.DepartName,
-                            value: item.DepartName
-                        })
-                    }
-                    if (!compHandle.filterArr.find(i => i.value === item.ChannelType) && item.ChannelType) {
+                    if (!compHandle.filterArr.find(i => i.label === item.Manager) && item.Manager) {
                         compHandle.filterArr.push({
-                            label: channelType.find(i => i.value === item.ChannelType).label,
-                            value: item.ChannelType
+                            label: item.Manager,
+                            value: item.Manager
                         })
                     }
                 }
             }
-
             initTable()
         }).finally(() => {
             compData.loading = false
         })
     },
     introduction(row: any) {
-        compData.introduction = row.Introduction
-        compData.showModal = true
+        ViewRef.value.openModal(row)
+    },
+    association(row: any) {
+        DetailsRef.value.openModal(row)
     },
     del(row: any) {
-        deleteItem(row.ChannelID)
+        deleteItem(row.ID)
     },
     dels() {
         if (compData.checkedRowKeys.length <= 0){
             return message.warning("请选择要删除的项")
         }
         let ids = compData.checkedRowKeys.join(',')
-        deleteModalRef.value.openDeleteModal('确认要删除所选渠道吗？',function deleteFun() {
+        deleteModalRef.value.openDeleteModal('确认要删除所选数据吗？',function deleteFun() {
             deleteItem(ids)
             compData.checkedRowKeys = []
         })
     },
     edit(row: any) {
-        addModalRef.value.openModal({type: 'edit', itemData: row, list: compData.allData})
+        addModalRef.value.openModal({type: 'edit', itemData: row})
     },
     add() {
-        addModalRef.value.openModal({list : compData.allData})
-    },
-    details(row: any) {
-        DetailsRef.value.openModal({itemData: row, list: compData.allData})
+        addModalRef.value.openModal({})
     },
     check(rowKeys: any) {
         compData.checkedRowKeys = rowKeys
@@ -278,11 +244,11 @@ const compHandle = reactive({
         compData.columns = compData.sourceColumns.filter((item) => value.indexOf(item.key) !== -1)
     },
     search() {
-        let props = ['ChannelName', 'ChannelNo', 'DepartName', 'PidChannelName']
+        let props = ['AssociationName', 'Tel', 'Manager', 'Remark']
         compData.tableData  = Search(compData.searchForm.keyWord, props, deepCopy(compData.allData))
     },
     exportData() {
-        ExportTable(compData.allData, compData.columns, '渠道管理')
+        ExportTable(compData.allData, compData.columns, '确权面积')
     },
 })
 
@@ -306,7 +272,7 @@ const determineUserPermissions = () => {
 //删除
 const deleteItem = (ids: string | number) => {
     compData.loading = true
-    deleteChannel(ids).then(
+    DeleteWaterAssociation(ids).then(
         res =>{
             if (res.data.Code === 0){
                 message.warning("删除失败，请重试")

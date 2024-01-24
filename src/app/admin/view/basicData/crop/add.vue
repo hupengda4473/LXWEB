@@ -15,6 +15,7 @@
                 label-width="120"
                 ref="formRef"
                 :model="compData.data"
+                :size="formSize"
                 :rules="rules"
             >
                 <n-form-item label="作物名称" path="CropName">
@@ -54,6 +55,7 @@ import {defineEmits, defineExpose, reactive, ref} from "vue"
 import {FormInst, useMessage} from "naive-ui"
 import {deepCopy} from "@/packages/utils/utils"
 import {addCrop, modifyCrop} from "@/app/admin/api/crop"
+import {formSize} from '@/app/admin/config/config'
 
 const message = useMessage()
 

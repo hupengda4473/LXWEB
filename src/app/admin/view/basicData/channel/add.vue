@@ -4,7 +4,7 @@
             style="width: 600px;"
             header-style="text-align: center;"
             footer-style="text-align: center;"
-            :title="compData.type === 'add' ? '新增灌区' : '编辑灌区'"
+            :title="compData.type === 'add' ? '新增渠道' : '编辑渠道'"
             :bordered="false"
             size="huge"
             role="dialog"
@@ -14,38 +14,58 @@
                 label-placement="left"
                 label-width="100"
                 ref="formRef"
+                :size="formSize"
                 :model="compData.data"
                 :rules="rules"
             >
-                <n-form-item label="灌区名称" path="DistrictName">
-                    <n-input clearable v-model:value="compData.data.DistrictName" type="text" placeholder="请输入灌区名称" />
+                <n-form-item label="渠道名称" path="ChannelName">
+                    <n-input clearable v-model:value="compData.data.ChannelName" type="text" placeholder="请输入渠道名称" />
                 </n-form-item>
-                <n-form-item label="负责人" path="Principals">
-                    <n-input clearable v-model:value="compData.data.Principals" type="text" placeholder="请输入负责人" />
+                <n-form-item label="渠道编号" path="ChannelNo">
+                    <n-input clearable v-model:value="compData.data.ChannelNo" type="text" placeholder="请输入渠道编号" />
                 </n-form-item>
-                <n-form-item label="联系方式" path="Telephone">
-                    <n-input clearable v-model:value="compData.data.Telephone" type="text" placeholder="请输入联系方式" />
-                </n-form-item>
-                <n-form-item label="管理范围" path="Scope">
-                    <n-input clearable v-model:value="compData.data.Scope" type="text" placeholder="请输入管理范围" />
-                </n-form-item>
-                <n-form-item label="行政区域" path="AreaID">
-                    <n-cascader
-                        v-model:value="compData.data.AreaID"
+                <n-form-item label="灌溉区域" path="DistrictID">
+                    <n-select
+                        v-model:value="compData.data.DistrictID"
+                        filterable
+                        clearable
+                        label-field="DistrictName"
+                        value-field="DistrictID"
+                        placeholder="请选择灌溉区域"
                         :options="compData.generalOptions"
-                        :size="formSize"
-                        :show-path="true"
-                        :clearable="true"
-                        placeholder="请选择行政区域"
-                        check-strategy="all"
-                        expand-trigger="hover"
-                        label-field="AreaName"
-                        value-field="AreaID"
-                        children-field="Children"
                     />
                 </n-form-item>
-                <n-form-item label="简介" path="Introduction">
-                    <n-input type="textarea" clearable v-model:value="compData.data.Introduction" placeholder="请输入简介" />
+                <n-form-item label="管理单位" path="DepartName">
+                    <n-input clearable v-model:value="compData.data.DepartName" type="text" placeholder="请输入管理单位" />
+                </n-form-item>
+                <n-form-item label="渠道类型" path="ChannelType">
+                    <n-select
+                        v-model:value="compData.data.ChannelType"
+                        filterable
+                        clearable
+                        placeholder="请选择渠道类型"
+                        :options="channelType"
+                    />
+                </n-form-item>
+                <n-form-item label="上级渠道" path="Pid">
+                    <n-select
+                        v-model:value="compData.data.Pid"
+                        filterable
+                        clearable
+                        label-field="ChannelName"
+                        value-field="ChannelID"
+                        placeholder="请选择上级渠道"
+                        :options="compData.channelList"
+                    />
+                </n-form-item>
+                <n-form-item label="设计流量" path="DesignFlow">
+                    <n-input clearable v-model:value="compData.data.DesignFlow" type="text" placeholder="请输入设计流量" />
+                </n-form-item>
+                <n-form-item label="最大水深" path="MaxFlow">
+                    <n-input clearable v-model:value="compData.data.MaxFlow" type="text" placeholder="请输入最大水深" />
+                </n-form-item>
+                <n-form-item label="渠道长度" path="ChannelLength">
+                    <n-input clearable v-model:value="compData.data.ChannelLength" type="text" placeholder="请输入渠道长度" />
                 </n-form-item>
             </n-form>
             <template #footer>
@@ -64,90 +84,113 @@
 <script setup lang="ts">
 import {defineEmits, defineExpose, onMounted, reactive, ref} from "vue"
 import {FormInst, useMessage} from "naive-ui"
-import {addIrrigateDistrict, modifyIrrigateDistrict} from "@/app/admin/api/irrigated"
+import {findAllIrrigateDistrict} from "@/app/admin/api/irrigated"
 import {deepCopy} from "@/packages/utils/utils"
-import {getTree} from "@/app/admin/api/area"
-import {treeDeleteChildren} from "@/app/admin/untils/untils"
+import {channelType} from "@/app/admin/config/config"
+import {addChannel, modifyChannel} from "@/app/admin/api/channel"
 import {formSize} from '@/app/admin/config/config'
 
 const message = useMessage()
 
 type AddParams = {
-    DistrictID: string | number,
-    DistrictName: string,
-    Principals: string,
-    Telephone: string,
-    Scope: string,
-    AreaID: string | number,
-    Introduction: string | number,
+    ChannelID: string | number,
+    ChannelName: string,
+    ChannelNo: string,
+    DistrictID: any,
+    DepartName: string,
+    ChannelType: string | number,
+    Pid: any,
+    DesignFlow: string | number,
+    MaxFlow: string | number,
+    ChannelLength: string | number,
 }
 type Song = {
     showAddModal: boolean,
     type: string,
     generalOptions: object [],
+    channelList: object [],
     data: AddParams
 }
 const compData = reactive<Song>({
     showAddModal: false,
     type: 'add',
     generalOptions: [],
+    channelList: [],
     data: {
-        DistrictID: 0,
-        DistrictName: '',
-        Principals: '',
-        Telephone: '',
-        Scope: '',
-        AreaID: '',
-        Introduction: '',
+        ChannelID: 0,
+        ChannelName: '',
+        ChannelNo: '',
+        DistrictID: '',
+        DepartName: '',
+        ChannelType: '',
+        Pid: '',
+        DesignFlow: '',
+        MaxFlow: '',
+        ChannelLength: '',
     },
 })
 
 const rules = {
-    DistrictName: {
+    ChannelName: {
         required: true,
         message: '请输入灌区名称',
         trigger: ['input', 'blur']
     },
-    Principals: {
+    ChannelNo: {
         required: true,
-        message: '请输入负责人',
+        message: '请输入渠道编号',
         trigger: ['input', 'blur']
     },
-    Telephone: {
+    DistrictID: {
         required: true,
-        message: '请输入联系方式',
+        message: '请选择灌溉区域',
+    },
+    DepartName: {
+        required: true,
+        message: '请输入管理单位',
         trigger: ['input', 'blur']
     },
-    Scope: {
+    ChannelType: {
         required: true,
-        message: '请输入管理范围',
+        message: '请选择渠道类型',
+    },
+    DesignFlow: {
+        required: true,
+        message: '请输入设计流量',
         trigger: ['input', 'blur']
     },
-    AreaID: {
+    MaxFlow: {
         required: true,
-        message: '请选择行政区域',
+        message: '请输入最大水深',
+        trigger: ['input', 'blur']
     },
-    Introduction: {
+    ChannelLength: {
         required: true,
-        message: '请输入简介',
+        message: '请输入渠道长度',
         trigger: ['input', 'blur']
     },
 }
 
-const openModal = ({type = 'add', itemData = {}}: { type?: string; itemData?: object }) => {
+const openModal = ({type = 'add', itemData = {}, list = []}: { type?: string; itemData?: object, list?: [] }) => {
     compData.showAddModal = true
+    compData.channelList = list
     compData.type = type
     compData.data = {
-        DistrictID: 0,
-        DistrictName: '',
-        Principals: '',
-        Telephone: '',
-        Scope: '',
-        AreaID: '',
-        Introduction: '',
+        ChannelID: 0,
+        ChannelName: '',
+        ChannelNo: '',
+        DistrictID: '',
+        DepartName: '',
+        ChannelType: '',
+        Pid: '',
+        DesignFlow: '',
+        MaxFlow: '',
+        ChannelLength: '',
     }
     if (type === 'edit') {
         compData.data = deepCopy(itemData)
+        compData.data.Pid = deepCopy(itemData).Pid || null
+        compData.data.DistrictID = deepCopy(itemData).DistrictID || null
     }
 }
 
@@ -159,7 +202,7 @@ const drawerConfirm = (e: MouseEvent) => {
     formRef.value?.validate((errors) => {
         if (!errors) {
             if (compData.type === 'add') {
-                addIrrigateDistrict( compData.data ).then(res => {
+                addChannel( compData.data ).then(res => {
                     if (res.data.Code === 0) {
                         message.warning("新增失败，请重试")
                     } else {
@@ -169,7 +212,7 @@ const drawerConfirm = (e: MouseEvent) => {
                     }
                 })
             } else {
-                modifyIrrigateDistrict( compData.data ).then(res => {
+                modifyChannel( compData.data ).then(res => {
                     if (res.data.Code === 0) {
                         message.warning("修改失败，请重试")
                     } else {
@@ -183,10 +226,20 @@ const drawerConfirm = (e: MouseEvent) => {
     })
 }
 
-//获取行政区域
-const getTreeData = () => {
-    getTree(0).then(res => {
-        compData.generalOptions = treeDeleteChildren(res.data) || []
+//获取灌区
+const getIrrigatedArea = () => {
+    let params = {
+        PageSize: 999,
+        PageIndex: 1,
+        OrderField: "",
+        OrderType: "",
+        BeginDT: "",
+        EndDT: "",
+        FuzzyName: "",
+        UserID: 0
+    }
+    findAllIrrigateDistrict(params).then(res => {
+        compData.generalOptions = res.data.Item1
     })
 }
 
@@ -195,10 +248,6 @@ defineExpose({
 })
 
 onMounted( () => {
-    getTreeData()
+    getIrrigatedArea()
 })
 </script>
-
-<style scoped>
-
-</style>

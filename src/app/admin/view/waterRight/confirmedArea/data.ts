@@ -1,6 +1,5 @@
 import {DataTableColumns, NButton, NPopconfirm} from "naive-ui"
 import {h} from "vue"
-import {channelType} from '@/app/admin/config/config'
 
 const createColumns = ({compHandle}): DataTableColumns => {
     const arr = [
@@ -8,60 +7,57 @@ const createColumns = ({compHandle}): DataTableColumns => {
             type: "selection",
         },
         {
-            title: "渠道名称",
-            key: "ChannelName",
+            title: "用水组织名称",
+            key: "AssociationName",
             align: "center",
             defaultSortOrder: 'descend',
             sorter: 'default',
         },
         {
-            title: "渠道编号",
-            key: "ChannelNo",
+            title: "负责人",
+            key: "Manager",
             align: "center",
             defaultSortOrder: 'descend',
             sorter: 'default',
-        },
-        {
-            title: "管理单位",
-            key: "DepartName",
-            align: "center",
-            defaultSortOrder: 'descend',
-            sorter: 'default',
-            defaultFilterOptionValues: [],
-            filterOptions: compHandle.manage.length > 0 ? compHandle.manage : null,
-            filter (value, row) {
-                return row.DepartName == value
-            },
-        },
-        {
-            title: "上级渠道",
-            key: "PidChannelName",
-            align: "center",
-            defaultSortOrder: 'descend',
-            sorter: 'default',
-            render(row) {
-                return row.PidChannelName ? row.PidChannelName : '无上级'
-            },
-            defaultFilterOptionValues: [],
-            filterOptions: compHandle.PidChannelName.length > 0 ? compHandle.PidChannelName : null,
-            filter (value, row) {
-                return row.Pid == value
-            },
-        },
-        {
-            title: "渠道类型",
-            key: "ChannelType",
-            align: "center",
-            defaultSortOrder: 'descend',
-            sorter: 'default',
-            render(row) {
-                return channelType.find(item => item.value === row.ChannelType).label
-            },
             defaultFilterOptionValues: [],
             filterOptions: compHandle.filterArr.length > 0 ? compHandle.filterArr : null,
             filter (value, row) {
-                return row.ChannelType == value
+                return row.Manager == value
             },
+        },
+        {
+            title: "联系方式",
+            key: "Tel",
+            align: "center",
+            defaultSortOrder: 'descend',
+            sorter: 'default',
+        },
+        {
+            title: "备注",
+            key: "Remark",
+            align: "center",
+            defaultSortOrder: 'descend',
+            sorter: 'default',
+        },
+        {
+            title: "取水证",
+            key: "Introduction",
+            align: "center",
+            defaultSortOrder: 'descend',
+            sorter: 'default',
+            render(row) {
+                return h("div", [
+                        h(NButton,
+                            {
+                                type: "info",
+                                size: "small",
+                                quaternary : true,
+                                onClick: () => compHandle.introduction(row),
+                            },
+                            {default: () => "查看取水证"}
+                        )
+                ])
+            }
         },
         compHandle.operation.isUpdate || compHandle.operation.isDelete ?
         {
@@ -70,16 +66,17 @@ const createColumns = ({compHandle}): DataTableColumns => {
             align: "center",
             render(row) {
                 return h("div", [
+                    compHandle.operation.isUpdate ?
                         h(NButton,
                             {
                                 type: "info",
                                 size: "small",
                                 ghost: true,
-                                onClick: () => compHandle.details(row),
+                                onClick: () => compHandle.association(row),
                                 style: {marginRight: "5px"}
                             },
-                            {default: () => "详情"}
-                        ),
+                            {default: () => "关联取水证"}
+                        ) : '',
                     compHandle.operation.isUpdate ?
                         h(NButton,
                             {
@@ -125,7 +122,77 @@ const createColumns = ({compHandle}): DataTableColumns => {
     return arr.filter( item => item !== false)
 }
 
+const createDetailsColumns = ({compHandle}): DataTableColumns => {
+    return [
+        {
+            type: "selection",
+        },
+        {
+            title: "许可证",
+            key: "Code",
+            align: "center",
+            defaultSortOrder: 'descend',
+            sorter: 'default',
+        },
+    ]
+}
+
+const createViewColumns = ({compHandle}): DataTableColumns => {
+    return [
+        {
+            title: "取水证编码",
+            key: "Code",
+            align: "center",
+            sorter: 'default',
+        },
+        {
+            title: "取水权人名称",
+            key: "HolderName",
+            align: "center",
+            sorter: 'default',
+        },
+        {
+            title: "取水地点",
+            key: "FetchWaterAddress",
+            align: "center",
+            sorter: 'default',
+        },
+        {
+            title: "取水方式",
+            key: "FetchWaterType",
+            align: "center",
+            sorter: 'default',
+        },
+        {
+            title: "取水量",
+            key: "FetchWaterQuantity",
+            align: "center",
+            sorter: 'default',
+        },
+        {
+            title: "查看取水证",
+            key: "Code",
+            align: "center",
+            render(row) {
+                return h("div", [
+                    h(NButton,
+                        {
+                            type: "info",
+                            size: "small",
+                            quaternary : true,
+                            onClick: () => compHandle.showImage(row),
+                        },
+                        {default: () => "查看"}
+                    )
+                ])
+            }
+        },
+    ]
+}
+
 
 export {
     createColumns,
+    createDetailsColumns,
+    createViewColumns,
 }

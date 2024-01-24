@@ -13,6 +13,7 @@
             <n-form
                 label-placement="left"
                 ref="formRef"
+                :size="formSize"
                 :model="compData.data"
                 :rules="rules"
                 :label-width="120"

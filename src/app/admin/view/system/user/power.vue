@@ -195,9 +195,9 @@ const drawerConfirm = () => {
     compData.loading = true
     savePower(compData.powerData).then( res => {
         if (res.data.Code === 0) {
-            message.warning("删除失败，请重试")
+            message.warning("修改失败，请重试")
         } else {
-            message.success("删除成功")
+            message.success("修改成功")
             compData.loading = false
             compData.showAddModal = false
             emit('refreshTable')

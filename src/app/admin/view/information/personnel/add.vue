@@ -15,6 +15,7 @@
                 ref="formRef"
                 :model="compData.data"
                 :rules="rules"
+                :size="formSize"
                 :label-width="120"
             >
                 <n-form-item label="人员姓名" path="PersonName">

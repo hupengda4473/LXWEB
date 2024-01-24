@@ -14,6 +14,7 @@
                 label-placement="left"
                 ref="formRef"
                 :model="compData.data"
+                :size="formSize"
                 :rules="rules"
             >
                 <n-form-item label="角色名称" path="RoleName">
@@ -38,6 +39,7 @@ import {defineEmits, defineExpose, reactive, ref} from "vue"
 import {FormInst, useMessage} from "naive-ui"
 import {addRoles, editRoles} from "@/app/admin/api/role"
 import {deepCopy} from "@/packages/utils/utils"
+import {formSize} from '@/app/admin/config/config'
 
 const message = useMessage()
 

@@ -4,7 +4,7 @@
             style="width: 600px;"
             header-style="text-align: center;"
             footer-style="text-align: center;"
-            :title="compData.type === 'add' ? '新增灌季' : '编辑灌季'"
+            :title="compData.type === 'add' ? '新增用水组织' : '编辑用水组织'"
             :bordered="false"
             size="huge"
             role="dialog"
@@ -18,20 +18,17 @@
                 :model="compData.data"
                 :rules="rules"
             >
-                <n-form-item label="灌季名称" path="SeasonName">
-                    <n-select filterable v-model:value="compData.data.SeasonName" :options="IrrigateSeasonList" placeholder="请选择灌季" />
+                <n-form-item label="组织名称" path="AssociationName">
+                    <n-input clearable v-model:value="compData.data.AssociationName" type="text" placeholder="请输入组织名称" />
                 </n-form-item>
-                <n-form-item label="轮次" path="Round">
-                    <n-select filterable v-model:value="compData.data.Round" :options="roundList" placeholder="请选择轮次" />
+                <n-form-item label="负责人" path="Manager">
+                    <n-input clearable v-model:value="compData.data.Manager" type="text" placeholder="请输入负责人" />
                 </n-form-item>
-                <n-form-item label="起止时间" path="rang">
-                    <n-date-picker
-                        v-model:value="compData.data.rang"
-                        :format="compData.dateFormat"
-                        type="datetimerange"
-                        style="width: 100%"
-                        clearable
-                    />
+                <n-form-item label="联系方式" path="Tel">
+                    <n-input clearable v-model:value="compData.data.Tel" type="text" placeholder="请输入联系方式" />
+                </n-form-item>
+                <n-form-item label="备注" path="Remark">
+                    <n-input clearable v-model:value="compData.data.Remark" type="textarea" placeholder="请输入备注" />
                 </n-form-item>
             </n-form>
             <template #footer>
@@ -51,67 +48,72 @@
 import {defineEmits, defineExpose, reactive, ref} from "vue"
 import {FormInst, useMessage} from "naive-ui"
 import {deepCopy} from "@/packages/utils/utils"
-import {IrrigateSeasonList, roundList} from "@/app/admin/config/config"
-import {addIrrigateSeason, modifyIrrigateSeason} from "@/app/admin/api/IrrigateSeason"
 import {formSize} from '@/app/admin/config/config'
+import {AddWaterAssociation, ModifyWaterAssociation} from "@/app/admin/api/WaterAssociation"
 
 const message = useMessage()
 
 type AddParams = {
-    SeasonID: string | number,
-    rang: any [],
-    SeasonName: string,
-    Round: string | number,
+    ID: string | number,
+    AssociationName: string,
+    Manager: string,
+    Tel: string,
+    Remark: string,
 }
 type Song = {
     showAddModal: boolean,
     type: string,
-    dateFormat: string,
+    generalOptions: object [],
     data: AddParams
 }
 const compData = reactive<Song>({
     showAddModal: false,
     type: 'add',
-    dateFormat: 'MM月dd日',
+    generalOptions: [],
     data: {
-        SeasonID: 0,
-        rang: [Date.now(), Date.now()],
-        SeasonName: '',
-        Round: '',
+        ID: 0,
+        AssociationName: '',
+        Manager: '',
+        Tel: '',
+        Remark: '',
     },
 })
 
 const rules = {
-    SeasonName: {
+    AssociationName: {
         required: true,
-        message: '请选择灌季名称',
+        message: '请输入组织名称',
+        trigger: ['input', 'blur']
     },
-    Round: {
+    Manager: {
         required: true,
-        message: '请选择轮次',
+        message: '请输入负责人',
+        trigger: ['input', 'blur']
     },
-    rang: {
+    Tel: {
         required: true,
-        message: '请选择起止时间',
+        message: '请输入联系方式',
+        trigger: ['input', 'blur']
     },
+    // Remark: {
+    //     required: true,
+    //     message: '请输入备注',
+    //     trigger: ['input', 'blur']
+    // },
 }
 
 const openModal = ({type = 'add', itemData = {}}: { type?: string; itemData?: object }) => {
     compData.showAddModal = true
     compData.type = type
     compData.data = {
-        SeasonID: 0,
-        rang: [Date.now(), Date.now()],
-        SeasonName: '',
-        Round: '',
+        ID: 0,
+        AssociationName: '',
+        Manager: '',
+        Tel: '',
+        Remark: '',
     }
     if (type === 'edit') {
-        let data = deepCopy(itemData)
-        compData.data = data
-        let start = data.BeginDT.replace('月', '-').replace('日', '')
-        let end = data.EndDT.replace('月', '-').replace('日', '')
-        let year = new Date().getFullYear()
-        compData.data.rang = [new Date(year + '-' + start), new Date(year + '-' + end)]
+        compData.data = deepCopy(itemData)
     }
 }
 
@@ -122,15 +124,8 @@ const drawerConfirm = (e: MouseEvent) => {
     e.preventDefault()
     formRef.value?.validate((errors) => {
         if (!errors) {
-            let params = {
-                SeasonID: compData.data.SeasonID,
-                SeasonName: compData.data.SeasonName,
-                Round: compData.data.Round,
-                BeginDT: new Date(compData.data.rang[0]).format('MM月dd日'),
-                EndDT: new Date(compData.data.rang[1]).format('MM月dd日'),
-            }
             if (compData.type === 'add') {
-                addIrrigateSeason( params ).then(res => {
+                AddWaterAssociation( compData.data ).then(res => {
                     if (res.data.Code === 0) {
                         message.warning("新增失败，请重试")
                     } else {
@@ -140,7 +135,7 @@ const drawerConfirm = (e: MouseEvent) => {
                     }
                 })
             } else {
-                modifyIrrigateSeason( params ).then(res => {
+                ModifyWaterAssociation( compData.data ).then(res => {
                     if (res.data.Code === 0) {
                         message.warning("修改失败，请重试")
                     } else {
@@ -158,7 +153,3 @@ defineExpose({
     openModal,
 })
 </script>
-
-<style scoped>
-
-</style>

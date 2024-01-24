@@ -14,6 +14,7 @@
                 label-placement="left"
                 label-width="100"
                 ref="formRef"
+                :size="formSize"
                 :model="compData.data"
                 :rules="rules"
             >

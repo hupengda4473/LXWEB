@@ -160,3 +160,11 @@ export const roundList = [
     {label: '第12轮', value: '12'},
 ]
 
+/*
+* 渠道类型
+* */
+export const channelType = [
+    {label: '干渠', value: 'MainCanal'},
+    {label: '支渠', value: 'BranchCanal'},
+    {label: '斗渠', value: 'LateralCanal'},
+]

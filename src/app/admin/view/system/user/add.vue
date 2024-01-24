@@ -14,6 +14,7 @@
                 label-placement="left"
                 ref="formRef"
                 label-width="100px"
+                :size="formSize"
                 :model="compData.data"
                 :rules="rules"
             >
@@ -74,6 +75,7 @@ import {defineEmits, defineExpose, onMounted, reactive, ref} from "vue"
 import {FormInst, useMessage, FormItemRule, FormItemInst} from "naive-ui"
 import {getAllPersonnel} from '@/app/admin/api/personnel'
 import {editUsers, addUsers} from '@/app/admin/api/user'
+import {formSize} from '@/app/admin/config/config'
 
 const message = useMessage()
 
