@@ -6,7 +6,7 @@
                 :model="compData.data"
                 :rules="rules"
                 label-placement="left"
-                label-width="170"
+                label-width="150"
                 :size="formSize"
             >
                 <n-grid :cols="24" :x-gap="24">
@@ -44,26 +44,61 @@
                     <n-form-item-gi v-show="judgeShowOrHide()" :span="12" label="闸门孔数" path="GateHolesNum">
                         <n-input v-model:value="compData.LocationJson.GateHolesNum" placeholder="请输入闸门孔数" />
                     </n-form-item-gi>
-                    <n-form-item-gi v-show="judgeShowOrHide()" :span="12" label="提闸高度(cm)" path="GateLiftingHeight">
-                        <n-input v-model:value="compData.LocationJson.GateLiftingHeight" placeholder="请输入提闸高度" />
+                    <n-form-item-gi v-show="judgeShowOrHide()" :span="12" label="提闸高度" path="GateLiftingHeight">
+<!--                        <n-input v-model:value="compData.LocationJson.GateLiftingHeight" placeholder="请输入提闸高度" />-->
+                        <n-input-number clearable v-model:value="compData.data.GateLiftingHeight" :show-button="false" type="text" placeholder="请输入提闸高度" style="width: 100%">
+                            <template #suffix>
+                                cm
+                            </template>
+                        </n-input-number>
                     </n-form-item-gi>
-                    <n-form-item-gi v-show="judgeShowOrHide()" :span="12" label="闸门宽度(m)" path="GateWidth">
-                        <n-input v-model:value="compData.LocationJson.GateWidth" placeholder="请输入闸门宽度" />
+                    <n-form-item-gi v-show="judgeShowOrHide()" :span="12" label="闸门宽度" path="GateWidth">
+<!--                        <n-input v-model:value="compData.LocationJson.GateWidth" placeholder="请输入闸门宽度" />-->
+                        <n-input-number clearable v-model:value="compData.data.GateWidth" :show-button="false" type="text" placeholder="请输入闸门宽度" style="width: 100%">
+                            <template #suffix>
+                                m
+                            </template>
+                        </n-input-number>
                     </n-form-item-gi>
-                    <n-form-item-gi v-show="judgeShowOrHide()" :span="12" label="闸门高度(m)" path="GateHeight">
-                        <n-input v-model:value="compData.LocationJson.GateHeight" placeholder="请输入闸门高度" />
+                    <n-form-item-gi v-show="judgeShowOrHide()" :span="12" label="闸门高度" path="GateHeight">
+<!--                        <n-input v-model:value="compData.LocationJson.GateHeight" placeholder="请输入闸门高度" />-->
+                        <n-input-number clearable v-model:value="compData.data.GateHeight" :show-button="false" type="text" placeholder="请输入闸门高度" style="width: 100%">
+                            <template #suffix>
+                                m
+                            </template>
+                        </n-input-number>
                     </n-form-item-gi>
-                    <n-form-item-gi v-show="judgeShowOrHide()" :span="12" label="闸墩高(m)" path="PierHeight">
-                        <n-input v-model:value="compData.LocationJson.PierHeight" placeholder="请输入闸墩高" />
+                    <n-form-item-gi v-show="judgeShowOrHide()" :span="12" label="闸墩高" path="PierHeight">
+<!--                        <n-input v-model:value="compData.LocationJson.PierHeight" placeholder="请输入闸墩高" />-->
+                        <n-input-number clearable v-model:value="compData.data.PierHeight" :show-button="false" type="text" placeholder="请输闸墩高" style="width: 100%">
+                            <template #suffix>
+                                m
+                            </template>
+                        </n-input-number>
                     </n-form-item-gi>
-                    <n-form-item-gi v-show="judgeShowOrHide()" :span="12" label="闸底高程(m)" path="GateBottomElevation">
-                        <n-input v-model:value="compData.LocationJson.GateBottomElevation" placeholder="请输入闸底高程" />
+                    <n-form-item-gi v-show="judgeShowOrHide()" :span="12" label="闸底高程" path="GateBottomElevation">
+<!--                        <n-input v-model:value="compData.LocationJson.GateBottomElevation" placeholder="请输入闸底高程" />-->
+                        <n-input-number clearable v-model:value="compData.data.GateBottomElevation" :show-button="false" type="text" placeholder="请输入闸底高程" style="width: 100%">
+                            <template #suffix>
+                                m
+                            </template>
+                        </n-input-number>
                     </n-form-item-gi>
-                    <n-form-item-gi v-show="judgeShowOrHide()" :span="12" label="闸前水尺测水点高程(m)" path="BeforeElevation">
-                        <n-input v-model:value="compData.LocationJson.BeforeElevation" placeholder="请输入闸前水尺测水点高程" />
+                    <n-form-item-gi v-show="judgeShowOrHide()" :span="12" label="闸前水尺测水点高程" path="BeforeElevation">
+<!--                        <n-input v-model:value="compData.LocationJson.BeforeElevation" placeholder="请输入闸前水尺测水点高程" />-->
+                        <n-input-number clearable v-model:value="compData.data.BeforeElevation" :show-button="false" type="text" placeholder="闸前水尺测水点高程" style="width: 100%">
+                            <template #suffix>
+                                m
+                            </template>
+                        </n-input-number>
                     </n-form-item-gi>
-                    <n-form-item-gi v-show="judgeShowOrHide()" :span="12" label="闸后水尺测水点高程(m)" path="AfterElevation">
-                        <n-input v-model:value="compData.LocationJson.AfterElevation" placeholder="请输入闸后水尺测水点高程" />
+                    <n-form-item-gi v-show="judgeShowOrHide()" :span="12" label="闸后水尺测水点高程" path="AfterElevation">
+<!--                        <n-input v-model:value="compData.LocationJson.AfterElevation" placeholder="请输入闸后水尺测水点高程" />-->
+                        <n-input-number clearable v-model:value="compData.data.AfterElevation" :show-button="false" type="text" placeholder="请输入闸后水尺测水点高程" style="width: 100%">
+                            <template #suffix>
+                                m
+                            </template>
+                        </n-input-number>
                     </n-form-item-gi>
                     <n-form-item-gi v-show="judgeShowOrHide()" :span="12" label="水流形态" path="FlowPattern">
                         <n-input v-model:value="compData.LocationJson.FlowPattern" placeholder="请输入水流形态" />
@@ -74,8 +109,13 @@
                     <n-form-item-gi v-show="judgeShowOrHide()" :span="12" label="翼墙形式" path="WingWallForm">
                         <n-input v-model:value="compData.LocationJson.WingWallForm" placeholder="请输入翼墙形式" />
                     </n-form-item-gi>
-                    <n-form-item-gi v-show="judgeShowOrHide()" :span="12" label="最大过水流量(m³/s)" path="MaxFlow">
-                        <n-input v-model:value="compData.LocationJson.MaxFlow" placeholder="请输入最大过水流量" />
+                    <n-form-item-gi v-show="judgeShowOrHide()" :span="12" label="最大过水流量" path="MaxFlow">
+<!--                        <n-input v-model:value="compData.LocationJson.MaxFlow" placeholder="请输入最大过水流量" />-->
+                        <n-input-number clearable v-model:value="compData.data.MaxFlow" :show-button="false" type="text" placeholder="最大过水流量" style="width: 100%">
+                            <template #suffix>
+                                m³/s
+                            </template>
+                        </n-input-number>
                     </n-form-item-gi>
 
 
@@ -172,7 +212,7 @@ const compData = reactive<Song>({
         Manager: '',
         Tel: '',
         GateHolesNum: '',
-        GateLiftingHeight: '',
+        GateLiftingHeight: null,
         GateWidth: '',
         GateHeight: '',
         PierHeight: '',
@@ -226,17 +266,17 @@ const openModal = ({type = 'add', itemData = {}}: { type?: string; itemData?: ob
         Manager: '',
         Tel: '',
         GateHolesNum: '',
-        GateLiftingHeight: '',
-        GateWidth: '',
-        GateHeight: '',
-        PierHeight: '',
-        GateBottomElevation: '',
-        BeforeElevation: '',
-        AfterElevation: '',
+        GateLiftingHeight: null,
+        GateWidth: null,
+        GateHeight: null,
+        PierHeight: null,
+        GateBottomElevation: null,
+        BeforeElevation: null,
+        AfterElevation: null,
         FlowPattern: '',
         UtilizationFactor: '',
         WingWallForm: '',
-        MaxFlow: '',
+        MaxFlow: null,
         txtPlanDoc: [],
     }
     compData.type = type

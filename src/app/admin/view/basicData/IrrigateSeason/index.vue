@@ -188,7 +188,7 @@ const compHandle = reactive({
         compData.searchForm.keyWord = ''
         compData.loading = true
         let params = {
-            PageSize: 9999,
+            PageSize: 999999999,
             PageIndex: 1,
             OrderField: "",
             OrderType: "",

@@ -102,7 +102,7 @@ const openModal = ({ itemData = {}, list = []}: { itemData?: object, list?: [] }
 //获取灌区
 const getIrrigatedArea = () => {
     let params = {
-        PageSize: 999,
+        PageSize: 999999999,
         PageIndex: 1,
         OrderField: "",
         OrderType: "",

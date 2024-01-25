@@ -15,12 +15,12 @@
                                 <n-tab-pane name="数据查询">
                                     <n-form style="margin-bottom: -24px" label-placement="left" label-align="right" :show-label="true" ref="searchFormRef" inline :model="compData.searchForm">
                                         <n-grid cols="24" x-gap="30" item-responsive responsive="screen">
-                                            <n-grid-item span="24 m:12 l:12">
+                                            <n-grid-item span="24 m:6 l:6">
                                                 <n-form-item label="模糊搜索：" path="keyWord">
                                                     <n-input clearable v-model:value="compData.searchForm.keyWord" placeholder="请输入关键字"/>
                                                 </n-form-item>
                                             </n-grid-item>
-                                            <n-grid-item span="24 m:8 l:6">
+                                            <n-grid-item span="24 m:6 l:6">
                                                 <n-form-item>
                                                     <n-space>
                                                         <n-button attr-type="button" @click="compHandle.search" :color="btnConfig.ser">
@@ -47,7 +47,7 @@
                                                     :is="renderIcon(btnConfig.ico.add)"
                                                 />
                                             </template>
-                                            新增作物
+                                            新增片区
                                         </n-button>
                                         <n-button :color="btnConfig.del" v-if="compHandle.operation.isDelete" @click="compHandle.dels()">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.del">
@@ -56,7 +56,7 @@
                                                     :is="renderIcon(btnConfig.ico.del)"
                                                 />
                                             </template>
-                                            删除作物
+                                            删除片区
                                         </n-button>
                                         <n-button :color="btnConfig.exp" v-if="compHandle.operation.isExport" @click="compHandle.exportData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.exp">
@@ -65,7 +65,7 @@
                                                     :is="renderIcon(btnConfig.ico.exp)"
                                                 />
                                             </template>
-                                            导出作物
+                                            导出片区
                                         </n-button>
                                         <n-button :color="btnConfig.ref" :loading="compData.loading" @click="compHandle.getTableData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.ref">
@@ -140,9 +140,9 @@
             </n-grid-item>
         </n-grid>
         <!-- 删除提示框 -->
-        <deleteModal ref="deleteModalRef"/>
+        <DeleteModal ref="deleteModalRef"/>
         <!-- 修改、新增抽屉 -->
-        <addModal ref="addModalRef" @refreshTable="compHandle.getTableData()"/>
+        <AddModal ref="addModalRef" @refreshTable="compHandle.getTableData()"/>
     </div>
 </template>
 
@@ -156,17 +156,15 @@ import { ExportTable } from '@/app/admin/untils/ExportTable'
 import {renderIcon} from '@/packages/config/icon.ts'
 import {Search} from "@/app/admin/untils/FuzzySearch"
 import {useMessage} from "naive-ui"
-import deleteModal from '@/app/admin/component/deleteModal.vue'
-import addModal from './add.vue'
-import {deleteCrop, findAllCrop} from "@/app/admin/api/crop"
+import DeleteModal from '@/app/admin/component/deleteModal.vue'
+import AddModal from './add.vue'
+import {DeleteIrrigateBlock, FindIrrigateBlock} from "@/app/admin/api/IrrigateBlock"
 
 const message = useMessage()
 const appStore = appPinia()
 const deleteModalRef = ref(null)
 const addModalRef = ref(null)
 const compData = reactive({
-    showModal: false,
-    introduction: '',
     allData: [],
     tableData: [],
     tableSizeValue: tableSetting.tableSizeValue,
@@ -179,14 +177,13 @@ const compData = reactive({
     searchForm: {
         keyWord: '',
     },
-    rowKey: (row: any) => row.CropID,
+    rowKey: (row: any) => row.BlockId,
     checkedRowKeys: [],
 })
 const compHandle = reactive({
     filterArr: [],
     operation: {},
     getTableData() {
-        compData.searchForm.keyWord = ''
         compData.loading = true
         let params = {
             PageSize: 999999999,
@@ -198,36 +195,37 @@ const compHandle = reactive({
             FuzzyName: "",
             UserID: 1
         }
-        findAllCrop(params).then((res) => {
-            let data = res.data.Item1
-            compData.tableData = data || []
+        FindIrrigateBlock(params).then((res) => {
+            let data = res.data.Data
             compData.allData = data || []
             compHandle.filterArr = []
-            //表格过滤
-            if (data && data.length > 0) {
-                for (let item of data) {
-                    if (!compHandle.filterArr.find(i => i.value === item.CropType)) {
-                        compHandle.filterArr.push({
-                            label: item.CropType === 0 ? '高耗水作物' : '低耗水作物',
-                            value: item.CropType
-                        })
-                    }
-                }
-            }
+            // 表格过滤
+            // if (data && data.length > 0) {
+            //     for (let item of data) {
+            //         if (!compHandle.filterArr.find(i => i.label === item.Year) && item.Year) {
+            //             compHandle.filterArr.push({
+            //                 label: item.Year,
+            //                 value: item.Year
+            //             })
+            //         }
+            //     }
+            // }
+            let props = ['AssociationName', 'EntranceName', 'ChannelName', 'Remark']
+            compData.tableData  = Search(compData.searchForm.keyWord, props, deepCopy(compData.allData))
             initTable()
         }).finally(() => {
             compData.loading = false
         })
     },
     del(row: any) {
-        deleteItem(row.CropID)
+        deleteItem(row.BlockId)
     },
     dels() {
         if (compData.checkedRowKeys.length <= 0){
             return message.warning("请选择要删除的项")
         }
         let ids = compData.checkedRowKeys.join(',')
-        deleteModalRef.value.openDeleteModal('确认要删除所选作物吗？',function deleteFun() {
+        deleteModalRef.value.openDeleteModal('确认要删除所选数据吗？',function deleteFun() {
             deleteItem(ids)
             compData.checkedRowKeys = []
         })
@@ -248,11 +246,10 @@ const compHandle = reactive({
         compData.columns = compData.sourceColumns.filter((item) => value.indexOf(item.key) !== -1)
     },
     search() {
-        let props = ['CropName', 'WaterQuota', 'BeginDT', 'EndDT']
-        compData.tableData  = Search(compData.searchForm.keyWord, props, deepCopy(compData.allData))
+        compHandle.getTableData()
     },
     exportData() {
-        ExportTable(compData.allData, compData.columns, '作物管理')
+        ExportTable(compData.allData, compData.columns, '灌溉片区管理')
     },
 })
 
@@ -276,7 +273,7 @@ const determineUserPermissions = () => {
 //删除
 const deleteItem = (ids: string | number) => {
     compData.loading = true
-    deleteCrop(ids).then(
+    DeleteIrrigateBlock(ids).then(
         res =>{
             if (res.data.Code === 0){
                 message.warning("删除失败，请重试")
