@@ -118,6 +118,7 @@ export const pointType = [
     {label: '流量', value: '7'},
     {label: '雨情', value: '8'},
     {label: '视频', value: '9'},
+    {label: '水质', value: '10'},
 ]
 
 /*
@@ -167,4 +168,13 @@ export const channelType = [
     {label: '干渠', value: 'MainCanal'},
     {label: '支渠', value: 'BranchCanal'},
     {label: '斗渠', value: 'LateralCanal'},
+]
+
+/*
+* 水源信息类型
+* */
+export const headwatersTypeList = [
+    {label: '水库', value: 1},
+    {label: '渠道', value: 2},
+    {label: '自然河道', value: 3},
 ]

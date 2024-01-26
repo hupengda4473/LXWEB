@@ -4,7 +4,7 @@
             style="width: 600px;"
             header-style="text-align: center;"
             footer-style="text-align: center;"
-            :title="compData.type === 'add' ? '新增利用率' : '编辑利用率'"
+            :title="compData.type === 'add' ? '新增水源' : '编辑水源'"
             :bordered="false"
             size="huge"
             role="dialog"
@@ -18,26 +18,24 @@
                 :model="compData.data"
                 :rules="rules"
             >
-                <n-form-item label="渠道名称" path="ChannelID">
-                    <n-select
-                        v-model:value="compData.data.ChannelID"
-                        filterable
-                        clearable
-                        label-field="ChannelName"
-                        value-field="ChannelID"
-                        placeholder="请选择渠道名称"
-                        :options="compData.generalOptions"
-                    />
+                <n-form-item label="水源名称" path="SourceName">
+                    <n-input clearable v-model:value="compData.data.SourceName" type="text" placeholder="请输入水源名称" />
                 </n-form-item>
-                <n-form-item label="利用率" path="Ratio">
-                    <n-input-number clearable v-model:value="compData.data.Ratio" type="text" placeholder="请输入利用率" style="width: 100%">
+                <n-form-item label="水源容量" path="Capacity">
+                    <n-input-number clearable v-model:value="compData.data.Capacity" type="text" placeholder="请输入水源容量" style="width: 100%">
                         <template #suffix>
-                            %
+                            亿m³
                         </template>
                     </n-input-number>
                 </n-form-item>
-                <n-form-item label="年份" path="Year">
-                    <n-date-picker v-model:value="compData.data.Year" type="year" clearable placeholder="请选择年份" style="width: 100%" />
+                <n-form-item label="水源类型" path="SourceType">
+                    <n-select
+                        v-model:value="compData.data.SourceType"
+                        filterable
+                        clearable
+                        placeholder="请选择水源类型"
+                        :options="headwatersTypeList"
+                    />
                 </n-form-item>
             </n-form>
             <template #footer>
@@ -54,51 +52,45 @@
 </template>
 
 <script setup lang="ts">
-import {defineEmits, defineExpose, onMounted, reactive, ref} from "vue"
+import {defineEmits, defineExpose, reactive, ref} from "vue"
 import {FormInst, useMessage} from "naive-ui"
 import {deepCopy} from "@/packages/utils/utils"
-import {formSize} from '@/app/admin/config/config'
-import {findAllChannel} from "@/app/admin/api/channel"
-import {AddChannelRatio, ModifyChannelRatio} from "@/app/admin/api/usage"
+import {formSize, headwatersTypeList} from '@/app/admin/config/config'
+import {AddWaterSource, ModifyWaterSource} from "@/app/admin/api/waterSource"
 
 const message = useMessage()
 
 type AddParams = {
-    ID: string | number,
-    Ratio: string | number | null,
-    ChannelID: string | number | null,
-    Year: any,
+    SourceId: string | number,
+    SourceName: string | number | null,
+    Capacity: string | number | null,
+    SourceType: string | number | null,
 }
 type Song = {
     showAddModal: boolean,
     type: string,
-    generalOptions: object [],
     data: AddParams
 }
 const compData = reactive<Song>({
     showAddModal: false,
     type: 'add',
-    generalOptions: [],
     data: {
-        ID: 0,
-        Ratio: null,
-        ChannelID: null,
-        Year: new Date().getFullYear(),
+        SourceId: 0,
+        SourceName: null,
+        Capacity: null,
+        SourceType: null,
     },
 })
 
 const rules = {
-    ChannelID: {
+    SourceName: {
         required: true,
-        message: '请选择渠道名称',
+        message: '请输入水源名称',
+        trigger: ['input', 'blur']
     },
-    Ratio: {
+    SourceType: {
         required: true,
-        message: '请输入利用率',
-    },
-    Year: {
-        required: true,
-        message: '请选择年份',
+        message: '请选择水源类型',
     },
 }
 
@@ -106,15 +98,13 @@ const openModal = ({type = 'add', itemData = {}}: { type?: string; itemData?: ob
     compData.showAddModal = true
     compData.type = type
     compData.data = {
-        ID: 0,
-        Ratio: null,
-        ChannelID: null,
-        Year: null,
+        SourceId: 0,
+        SourceName: null,
+        Capacity: null,
+        SourceType: null,
     }
     if (type === 'edit') {
-        let data = deepCopy(itemData)
-        compData.data = data
-        compData.data.Year = new Date(data.Year + '-01-01').getTime()
+        compData.data = deepCopy(itemData)
     }
 }
 
@@ -125,10 +115,9 @@ const drawerConfirm = (e: MouseEvent) => {
     e.preventDefault()
     formRef.value?.validate((errors) => {
         if (!errors) {
-            let params = compData.data
-            params.Year = new Date(compData.data.Year).getFullYear()
+            let params = deepCopy(compData.data)
             if (compData.type === 'add') {
-                AddChannelRatio( params ).then(res => {
+                AddWaterSource( params ).then(res => {
                     if (res.data.Code === 0) {
                         message.warning("新增失败，请重试")
                     } else {
@@ -138,7 +127,7 @@ const drawerConfirm = (e: MouseEvent) => {
                     }
                 })
             } else {
-                ModifyChannelRatio( params ).then(res => {
+                ModifyWaterSource( params ).then(res => {
                     if (res.data.Code === 0) {
                         message.warning("修改失败，请重试")
                     } else {
@@ -152,26 +141,7 @@ const drawerConfirm = (e: MouseEvent) => {
     })
 }
 
-const findAllChannelData = () => {
-    let params = {
-        PageSize: 999999999,
-        PageIndex: 1,
-        OrderField: "",
-        OrderType: "",
-        BeginDT: "",
-        EndDT: "",
-        FuzzyName: "",
-        UserID: 1
-    }
-    findAllChannel(params).then(res => {
-        compData.generalOptions = res.data.Item1
-    })
-}
-
 defineExpose({
     openModal,
-})
-onMounted(()=>{
-    findAllChannelData()
 })
 </script>

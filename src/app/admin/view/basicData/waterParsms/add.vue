@@ -4,7 +4,7 @@
             style="width: 600px;"
             header-style="text-align: center;"
             footer-style="text-align: center;"
-            :title="compData.type === 'add' ? '新增利用率' : '编辑利用率'"
+            :title="compData.type === 'add' ? '新增参数' : '编辑参数'"
             :bordered="false"
             size="huge"
             role="dialog"
@@ -18,26 +18,23 @@
                 :model="compData.data"
                 :rules="rules"
             >
-                <n-form-item label="渠道名称" path="ChannelID">
-                    <n-select
-                        v-model:value="compData.data.ChannelID"
-                        filterable
-                        clearable
-                        label-field="ChannelName"
-                        value-field="ChannelID"
-                        placeholder="请选择渠道名称"
-                        :options="compData.generalOptions"
-                    />
+                <n-form-item label="参数名称" path="ParamName">
+                    <n-input clearable v-model:value="compData.data.ParamName" type="text" placeholder="请输入参数名称" />
                 </n-form-item>
-                <n-form-item label="利用率" path="Ratio">
-                    <n-input-number clearable v-model:value="compData.data.Ratio" type="text" placeholder="请输入利用率" style="width: 100%">
-                        <template #suffix>
-                            %
-                        </template>
-                    </n-input-number>
+                <n-form-item label="参数符号" path="ParamSymbol">
+                    <n-input clearable v-model:value="compData.data.ParamSymbol" type="text" placeholder="请输入参数符号" />
                 </n-form-item>
-                <n-form-item label="年份" path="Year">
-                    <n-date-picker v-model:value="compData.data.Year" type="year" clearable placeholder="请选择年份" style="width: 100%" />
+                <n-form-item label="参数单位" path="ParamUnit">
+                    <n-input clearable v-model:value="compData.data.ParamUnit" type="text" placeholder="请输入参数单位" />
+                </n-form-item>
+                <n-form-item label="最低阈值" path="LowerLimit">
+                    <n-input-number clearable v-model:value="compData.data.LowerLimit" type="text" placeholder="请输入最低阈值" style="width: 100%"></n-input-number>
+                </n-form-item>
+                <n-form-item label="最高阈值" path="UpperLimit">
+                    <n-input-number clearable v-model:value="compData.data.UpperLimit" type="text" placeholder="请输入最高阈值" style="width: 100%"></n-input-number>
+                </n-form-item>
+                <n-form-item label="描述" path="Description">
+                    <n-input clearable v-model:value="compData.data.Description" type="textarea" placeholder="请输入描述" />
                 </n-form-item>
             </n-form>
             <template #footer>
@@ -54,20 +51,22 @@
 </template>
 
 <script setup lang="ts">
-import {defineEmits, defineExpose, onMounted, reactive, ref} from "vue"
+import {defineEmits, defineExpose, reactive, ref} from "vue"
 import {FormInst, useMessage} from "naive-ui"
 import {deepCopy} from "@/packages/utils/utils"
 import {formSize} from '@/app/admin/config/config'
-import {findAllChannel} from "@/app/admin/api/channel"
-import {AddChannelRatio, ModifyChannelRatio} from "@/app/admin/api/usage"
+import {AddParam, ModifyParam} from "@/app/admin/api/waterQuality"
 
 const message = useMessage()
 
 type AddParams = {
-    ID: string | number,
-    Ratio: string | number | null,
-    ChannelID: string | number | null,
-    Year: any,
+    ParamId: string | number,
+    ParamName: string,
+    ParamSymbol: string,
+    ParamUnit: string,
+    Description: string,
+    LowerLimit: string | number | null,
+    UpperLimit: string | number | null,
 }
 type Song = {
     showAddModal: boolean,
@@ -80,25 +79,44 @@ const compData = reactive<Song>({
     type: 'add',
     generalOptions: [],
     data: {
-        ID: 0,
-        Ratio: null,
-        ChannelID: null,
-        Year: new Date().getFullYear(),
+        ParamId: 0,
+        ParamName: '',
+        ParamSymbol: '',
+        ParamUnit: '',
+        Description: '',
+        LowerLimit: null,
+        UpperLimit: null,
     },
 })
 
 const rules = {
-    ChannelID: {
+    ParamName: {
         required: true,
-        message: '请选择渠道名称',
+        message: '请输入参数名称',
+        trigger: ['input', 'blur']
     },
-    Ratio: {
+    ParamSymbol: {
         required: true,
-        message: '请输入利用率',
+        message: '请输入参数符号',
+        trigger: ['input', 'blur']
     },
-    Year: {
+    ParamUnit: {
         required: true,
-        message: '请选择年份',
+        message: '请输入参数单位',
+        trigger: ['input', 'blur']
+    },
+    LowerLimit: {
+        required: true,
+        message: '请输入最低阈值',
+    },
+    UpperLimit: {
+        required: true,
+        message: '请输入最高阈值',
+    },
+    Description: {
+        required: true,
+        message: '请输入描述',
+        trigger: ['input', 'blur']
     },
 }
 
@@ -106,15 +124,16 @@ const openModal = ({type = 'add', itemData = {}}: { type?: string; itemData?: ob
     compData.showAddModal = true
     compData.type = type
     compData.data = {
-        ID: 0,
-        Ratio: null,
-        ChannelID: null,
-        Year: null,
+        ParamId: 0,
+        ParamName: '',
+        ParamSymbol: '',
+        ParamUnit: '',
+        Description: '',
+        LowerLimit: null,
+        UpperLimit: null,
     }
     if (type === 'edit') {
-        let data = deepCopy(itemData)
-        compData.data = data
-        compData.data.Year = new Date(data.Year + '-01-01').getTime()
+        compData.data = deepCopy(itemData)
     }
 }
 
@@ -125,10 +144,8 @@ const drawerConfirm = (e: MouseEvent) => {
     e.preventDefault()
     formRef.value?.validate((errors) => {
         if (!errors) {
-            let params = compData.data
-            params.Year = new Date(compData.data.Year).getFullYear()
             if (compData.type === 'add') {
-                AddChannelRatio( params ).then(res => {
+                AddParam( compData.data ).then(res => {
                     if (res.data.Code === 0) {
                         message.warning("新增失败，请重试")
                     } else {
@@ -138,7 +155,7 @@ const drawerConfirm = (e: MouseEvent) => {
                     }
                 })
             } else {
-                ModifyChannelRatio( params ).then(res => {
+                ModifyParam( compData.data ).then(res => {
                     if (res.data.Code === 0) {
                         message.warning("修改失败，请重试")
                     } else {
@@ -152,26 +169,7 @@ const drawerConfirm = (e: MouseEvent) => {
     })
 }
 
-const findAllChannelData = () => {
-    let params = {
-        PageSize: 999999999,
-        PageIndex: 1,
-        OrderField: "",
-        OrderType: "",
-        BeginDT: "",
-        EndDT: "",
-        FuzzyName: "",
-        UserID: 1
-    }
-    findAllChannel(params).then(res => {
-        compData.generalOptions = res.data.Item1
-    })
-}
-
 defineExpose({
     openModal,
-})
-onMounted(()=>{
-    findAllChannelData()
 })
 </script>

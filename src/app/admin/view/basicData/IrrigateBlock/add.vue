@@ -4,7 +4,7 @@
             style="width: 600px;"
             header-style="text-align: center;"
             footer-style="text-align: center;"
-            :title="compData.type === 'add' ? '新增用利用率' : '编辑利用率'"
+            :title="compData.type === 'add' ? '新增灌溉片区' : '编辑灌溉片区'"
             :bordered="false"
             size="huge"
             role="dialog"
