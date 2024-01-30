@@ -148,7 +148,7 @@
 <!--                        showToolbar: false-->
 <!--                        }"-->
                         <n-upload
-                            :action="requestUrl + '/api/Location/UploadFile'"
+                            :action="requestFileUrl + '/api/Location/UploadFile'"
                             :on-before-upload="beforeUpload"
                             :on-finish="handleFinish"
                             v-model:file-list="compData.LocationJson.txtPlanDoc"
@@ -175,7 +175,7 @@ import {defineEmits, defineExpose, onMounted, reactive, ref} from "vue"
 import {FormInst, useMessage, UploadFileInfo} from "naive-ui"
 import {deepCopy} from "@/packages/utils/utils"
 import {getTree} from '@/app/admin/api/institution'
-import {formSize, pointType, requestUrl} from '@/app/admin/config/config'
+import {formSize, pointType, requestUrl, requestFileUrl} from '@/app/admin/config/config'
 import {treeDeleteChildren} from "@/app/admin/untils/untils"
 import {AddLocation, modifyLocation} from "@/app/admin/api/station"
 

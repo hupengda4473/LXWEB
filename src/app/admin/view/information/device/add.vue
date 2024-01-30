@@ -84,7 +84,8 @@
 <!--                        showToolbar: false-->
 <!--                        }"-->
                         <n-upload
-                            :action="requestUrl + '/api/DeviceInfo/UploadFile'"
+                            :action="requestFileUrl + '/api/DeviceInfo/UploadFile'"
+                            :headers="{ Authorization: 'Bearer ' + token }"
                             :on-before-upload="beforeUpload"
                             :on-finish="handleFinish"
                             v-model:file-list="compData.data.Img"
@@ -112,11 +113,13 @@ import {FormInst, useMessage, UploadFileInfo} from "naive-ui"
 import {deepCopy} from "@/packages/utils/utils"
 import {getTree} from '@/app/admin/api/institution'
 import {addDevice, findNotRelationDevice, modifyDevice} from '@/app/admin/api/device'
-import {formSize, deviceType, requestUrl} from '@/app/admin/config/config'
+import {formSize, deviceType, requestUrl, requestFileUrl} from '@/app/admin/config/config'
 import {treeDeleteChildren} from "@/app/admin/untils/untils"
 import {findAllLocation} from "@/app/admin/api/station"
+import locaStore from "@/packages/utils/locaStore"
 
 const message = useMessage()
+const token = locaStore.get('token_lx_web')
 
 type Song = {
     showAddModal: boolean,

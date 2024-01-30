@@ -1,6 +1,8 @@
 import {reactive} from "vue"
 
+/*正式发布两个地址应该一样*/
 export const requestUrl = 'http://localhost:59966'
+export const requestFileUrl = 'http://localhost:59966'
 
 /*
 表单大小*/
@@ -177,4 +179,13 @@ export const headwatersTypeList = [
     {label: '水库', value: 1},
     {label: '渠道', value: 2},
     {label: '自然河道', value: 3},
+]
+
+/*
+* 防洪措施类型
+* */
+export const floodControlMeasuresType = [
+    {label: '防洪指导文件', value: 1},
+    {label: '防洪通知', value: 2},
+    {label: '防洪工作部署', value: 3},
 ]
