@@ -22,8 +22,12 @@ const ModifyOfficalInfo = (params: object) => {
 const DeleteOfficalInfo = (ids: string | number) => {
     return post('/api/OfficalInfo/Delete', ids)
 }
-const PublishOfficalInfo = (ids: string | number) => {
-    return post('/api/OfficalInfo/Publish', ids)
+type Pbulish = {
+    Id: string | number,
+    Handle: string | number
+}
+const PublishOfficalInfo = (params: Pbulish) => {
+    return post('/api/OfficalInfo/Publish', params)
 }
 
 export {

@@ -204,5 +204,21 @@ export const floodControlType = [
 * */
 export const officalInfoType = [
     {label: '草稿', value: 0},
-    {label: '下发', value: 2},
+    {label: '下发', value: 1},
+]
+
+/*
+* 调度指令下发类型
+* */
+export const instructType = [
+    {label: '水资源调度', value: 1},
+    {label: '巡检调度', value: 2},
+]
+
+/*
+* 完成情况类型
+* */
+export const finishStatusType = [
+    {label: '未完成', value: 0},
+    {label: '完成', value: 1},
 ]

@@ -1,6 +1,6 @@
 import {DataTableColumns, NButton, NImage, NPopconfirm, NPopover, NTag} from "naive-ui"
 import {h} from "vue"
-import {officalInfoType} from "@/app/admin/config/config"
+import {finishStatusType, instructType} from "@/app/admin/config/config"
 import {isImage} from "@/app/admin/untils/untils"
 
 const createColumns = ({compHandle}): DataTableColumns => {
@@ -16,40 +16,117 @@ const createColumns = ({compHandle}): DataTableColumns => {
             sorter: 'default',
         },
         {
-            title: "状态",
-            key: "FeatureType",
+            title: "指令类型",
+            key: "InstType",
             align: "center",
             sorter: 'default',
             render(row: any){
-                return officalInfoType.find(item => item.value === row.Status).label
+                return instructType.find(item => item.value === row.InstType).label
             }
         },
         {
-            title: "创建时间",
-            key: "CreateTime",
+            title: "指令详情",
+            key: "InstContent",
+            align: "center",
+            sorter: 'default',
+            width: 200,
+            render(row : any){
+                if (row.InstContent){
+                    return h(NPopover,{
+                            trigger: 'click',
+                            contentStyle: {
+                                maxWidth: '300px',
+                                fontSize: '16px',
+                                lineHeight: '24px'
+                            }
+                        },{
+                            default:()=>{
+                                return row.InstContent
+                            },
+                            trigger:()=>{
+                                return h(NTag,{
+                                    type: "info",
+                                    round: true,
+                                    bordered: false,
+                                },{
+                                    default: () => '查看详情',
+                                })
+                            }
+                        }
+                    )
+                }else {
+                    return '-'
+                }
+            }
+        },
+        {
+            title: "创建人",
+            key: "UserId",
+            align: "center",
+            sorter: 'default',
+            render(row: any) {
+                return compHandle.userList.find(item => item.UserID === row.UserId).UserName
+            }
+        },
+        {
+            title: "派发时间",
+            key: "DispTime",
             align: "center",
             sorter: 'default',
         },
         {
-            title: "生效时间",
-            key: "EffectiveTime",
+            title: "执行人",
+            key: "ExecutorId",
             align: "center",
             sorter: 'default',
+            render(row: any) {
+                return compHandle.userList.find(item => item.UserID === row.ExecutorId).UserName
+            }
         },
         {
-            title: "截止时间",
-            key: "ExpiringTime",
+            title: "签收状态",
+            key: "SignTime",
             align: "center",
             sorter: 'default',
+            render(row: any){
+                return row.SignTime ? '已签收': '未签收'
+            }
         },
         {
-            title: "文件",
+            title: "签收时间",
+            key: "SignTime",
+            align: "center",
+            sorter: 'default',
+            render(row: any){
+                return row.SignTime || '-'
+            }
+        },
+        {
+            title: "完成情况",
+            key: "FinishStatus",
+            align: "center",
+            sorter: 'default',
+            render(row: any) {
+                return finishStatusType.find(item => item.value == row.FinishStatus).label
+            }
+        },
+        {
+            title: "完成时间",
+            key: "FinishTime",
+            align: "center",
+            sorter: 'default',
+            render(row: any){
+                return  row.FinishStatus && row.FinishTime ? row.FinishTime || '-' : '-'
+            }
+        },
+        {
+            title: "完成相关文件",
             key: "UploadFiles",
             align: "center",
             sorter: 'default',
             render(row: any){
-                const tags = row.UploadFiles.map((tagKey) => {
-                    if (isImage(tagKey.type)){
+                return row.UploadFiles.map((tagKey) => {
+                    if (isImage(tagKey.type)) {
                         return h(NImage,
                             {
                                 height: "20",
@@ -59,7 +136,7 @@ const createColumns = ({compHandle}): DataTableColumns => {
                                 style: {margin: "0 10px"}
                             },
                         )
-                    }else {
+                    } else {
                         return h("div",
                             {
                                 onClick: () => compHandle.filePreview(tagKey),
@@ -69,38 +146,41 @@ const createColumns = ({compHandle}): DataTableColumns => {
                         )
                     }
                 })
-                return tags
             }
         },
         {
-            title: "描述",
-            key: "Brief",
+            title: "完成说明",
+            key: "FinishDetail",
             align: "center",
             sorter: 'default',
             width: 200,
             render(row : any){
-                return h(NPopover,{
-                    trigger: 'click',
-                    contentStyle: {
-                        maxWidth: '300px',
-                        fontSize: '16px',
-                        lineHeight: '24px'
-                    }
-                },{
-                    default:()=>{
-                        return row.Brief
-                    },
-                    trigger:()=>{
-                        return h(NTag,{
-                            type: "info",
-                            round: true,
-                            bordered: false,
+                if (row.FinishDetail){
+                    return h(NPopover,{
+                            trigger: 'click',
+                            contentStyle: {
+                                maxWidth: '300px',
+                                fontSize: '16px',
+                                lineHeight: '24px'
+                            }
                         },{
-                            default: () => '查看描述',
-                        })
-                    }
+                            default:()=>{
+                                return row.FinishDetail
+                            },
+                            trigger:()=>{
+                                return h(NTag,{
+                                    type: "info",
+                                    round: true,
+                                    bordered: false,
+                                },{
+                                    default: () => '查看描述',
+                                })
+                            }
+                        }
+                    )
+                }else {
+                    return  '-'
                 }
-                )
             }
         },
         compHandle.operation.isUpdate || compHandle.operation.isDelete ?
@@ -110,7 +190,7 @@ const createColumns = ({compHandle}): DataTableColumns => {
                 align: "center",
                 render(row) {
                     return h("div", [
-                        compHandle.operation.isUpdate && row.Status == 0 ?
+                        compHandle.operation.isUpdate && row.ExecutorId == compHandle.UserID && !row.SignTime ?
                             h(NPopconfirm,
                                 {
                                     onPositiveClick: () => {
@@ -129,15 +209,26 @@ const createColumns = ({compHandle}): DataTableColumns => {
                                                 size: "small",
                                                 ghost: true,
                                             },
-                                            {default: () => "下发"}
+                                            {default: () => "签收"}
                                         )
                                     },
                                     default: () => {
-                                        return "确认下发该通知吗？"
+                                        return "确认签收该指令吗？"
                                     }
                                 }
                             ) : '',
-                        compHandle.operation.isUpdate ?
+                        compHandle.operation.isUpdate && row.ExecutorId == compHandle.UserID && row.SignTime ?
+                            h(NButton,
+                                {
+                                    type: "info",
+                                    size: "small",
+                                    ghost: true,
+                                    onClick: () => compHandle.finish(row),
+                                    style: {margin: "5px"}
+                                },
+                                {default: () => "完成"}
+                            ) : '',
+                        compHandle.operation.isUpdate && row.UserId == compHandle.UserID && !row.SignTime ?
                             h(NButton,
                                 {
                                     type: "success",

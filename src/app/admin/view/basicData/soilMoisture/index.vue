@@ -15,12 +15,20 @@
                                 <n-tab-pane name="数据查询">
                                     <n-form style="margin-bottom: -24px" label-placement="left" label-align="right" :show-label="true" ref="searchFormRef" inline :model="compData.searchForm">
                                         <n-grid cols="24" x-gap="30" item-responsive responsive="screen">
-                                            <n-grid-item span="24 m:12 l:12">
+                                            <n-grid-item span="24 m:6 l:6">
                                                 <n-form-item label="模糊搜索：" path="keyWord">
                                                     <n-input clearable v-model:value="compData.searchForm.keyWord" placeholder="请输入关键字"/>
                                                 </n-form-item>
                                             </n-grid-item>
-                                            <n-grid-item span="24 m:8 l:6">
+                                            <n-grid-item span="24 m:8 l:8">
+                                                <n-form-item label="采集时间：" path="keyWord">
+                                                    <n-date-picker
+                                                        type="datetimerange"
+                                                        v-model:value="compData.searchForm.time"
+                                                    />
+                                                </n-form-item>
+                                            </n-grid-item>
+                                            <n-grid-item span="24 m:6 l:6">
                                                 <n-form-item>
                                                     <n-space>
                                                         <n-button attr-type="button" @click="compHandle.search" :color="btnConfig.ser">
@@ -35,7 +43,6 @@
                                                     </n-space>
                                                 </n-form-item>
                                             </n-grid-item>
-
                                         </n-grid>
                                     </n-form>
                                 </n-tab-pane>
@@ -48,7 +55,7 @@
                                                     :is="renderIcon(btnConfig.ico.add)"
                                                 />
                                             </template>
-                                            新增通知
+                                            新增
                                         </n-button>
                                         <n-button :color="btnConfig.del" v-if="compHandle.operation.isDelete" @click="compHandle.dels()">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.del">
@@ -57,7 +64,7 @@
                                                     :is="renderIcon(btnConfig.ico.del)"
                                                 />
                                             </template>
-                                            删除通知
+                                            删除
                                         </n-button>
                                         <n-button :color="btnConfig.exp" v-if="compHandle.operation.isExport" @click="compHandle.exportData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.exp">
@@ -66,7 +73,7 @@
                                                     :is="renderIcon(btnConfig.ico.exp)"
                                                 />
                                             </template>
-                                            导出通知
+                                            导出
                                         </n-button>
                                         <n-button :color="btnConfig.ref" :loading="compData.loading" @click="compHandle.getTableData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.ref">
@@ -144,8 +151,6 @@
         <DeleteModal ref="deleteModalRef"/>
         <!-- 修改、新增抽屉 -->
         <AddModal ref="addModalRef" @refreshTable="compHandle.getTableData()"/>
-        <!-- 文件预览 -->
-        <FileView ref="FileViewRef"/>
     </div>
 </template>
 
@@ -161,14 +166,13 @@ import {Search} from "@/app/admin/untils/FuzzySearch"
 import {useMessage} from "naive-ui"
 import DeleteModal from '@/app/admin/component/deleteModal.vue'
 import AddModal from './add.vue'
-import FileView from '@/app/admin/component/fileView.vue'
-import {FindOfficalInfo, DeleteOfficalInfo, PublishOfficalInfo} from "@/app/admin/api/officalInfo"
+import {DeleteSoilMoisture, FindSoilMoisture} from "@/app/admin/api/soilMoisture"
 
 const message = useMessage()
 const appStore = appPinia()
 const deleteModalRef = ref(null)
 const addModalRef = ref(null)
-const FileViewRef = ref(null)
+const d = 86400000
 const compData = reactive({
     allData: [],
     tableData: [],
@@ -181,35 +185,35 @@ const compData = reactive({
     columnsOptionsValue: [],
     searchForm: {
         keyWord: '',
+        time: ref<[number, number]>([new Date().setHours(0,0,0,0) - d * 6, new Date().setHours(23,59,59)])
     },
-    rowKey: (row: any) => row.InfoId,
+    rowKey: (row: any) => row.DataId,
     checkedRowKeys: [],
 })
 const compHandle = reactive({
     operation: {},
     getTableData() {
-        compData.searchForm.keyWord = ''
-        compData.loading = true
         let params = {
             PageSize: 999999999,
             PageIndex: 1,
             OrderField: "",
             OrderType: "",
-            BeginDT: "",
-            EndDT: "",
+            BeginDT: new Date(compData.searchForm.time[0]).format("yyyy-MM-dd hh:mm:ss"),
+            EndDT: new Date(compData.searchForm.time[1]).format("yyyy-MM-dd hh:mm:ss"),
             FuzzyName: "",
-            UserID: 1
+            UserID: appStore.userInfo.UserID
         }
-        FindOfficalInfo(params).then((res) => {
+        FindSoilMoisture(params).then((res) => {
             let data = res.data.Data
-            compData.tableData = data || []
             compData.allData = data || []
+            let props = ['CollectTime', 'Temperature', 'PH', 'ElectricalConductivity', 'Moisture', 'LocationName']
+            compData.tableData  = Search(compData.searchForm.keyWord, props, deepCopy(compData.allData))
         }).finally(() => {
             compData.loading = false
         })
     },
     del(row: any) {
-        deleteItem(row.InfoId)
+        deleteItem(row.DataId)
     },
     dels() {
         if (compData.checkedRowKeys.length <= 0){
@@ -227,30 +231,8 @@ const compHandle = reactive({
     add() {
         addModalRef.value.openModal({})
     },
-    distribute(row: object) {
-        compData.loading = true
-        let params = {
-            Id: row.InfoId,
-            Handle: 1,
-        }
-        PublishOfficalInfo(params).then(
-            res =>{
-                if (res.data.Code === 0){
-                    message.warning("下发失败，请重试")
-                }else {
-                    message.success("删除成功")
-                    compHandle.getTableData()
-                }
-            }
-        ).finally(() => {
-            compData.loading = false
-        })
-    },
     check(rowKeys: any) {
         compData.checkedRowKeys = rowKeys
-    },
-    filePreview(file: object) {
-        FileViewRef.value.viewFile(file, pageContentHeight.value)
     },
     tableSize() {
 
@@ -259,11 +241,10 @@ const compHandle = reactive({
         compData.columns = compData.sourceColumns.filter((item) => value.indexOf(item.key) !== -1)
     },
     search() {
-        let props = ['Title', 'Detail']
-        compData.tableData  = Search(compData.searchForm.keyWord, props, deepCopy(compData.allData))
+        compHandle.getTableData()
     },
     exportData() {
-        ExportTable(compData.allData, compData.columns, '文件通知下发')
+        ExportTable(compData.allData, compData.columns, '土壤墒情监测')
     },
 })
 
@@ -287,7 +268,7 @@ const determineUserPermissions = () => {
 //删除
 const deleteItem = (ids: string | number) => {
     compData.loading = true
-    DeleteOfficalInfo(ids).then(
+    DeleteSoilMoisture(ids).then(
         res =>{
             if (res.data.Code === 0){
                 message.warning("删除失败，请重试")

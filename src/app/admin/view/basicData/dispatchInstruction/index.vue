@@ -48,7 +48,7 @@
                                                     :is="renderIcon(btnConfig.ico.add)"
                                                 />
                                             </template>
-                                            新增通知
+                                            新增指令
                                         </n-button>
                                         <n-button :color="btnConfig.del" v-if="compHandle.operation.isDelete" @click="compHandle.dels()">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.del">
@@ -57,7 +57,7 @@
                                                     :is="renderIcon(btnConfig.ico.del)"
                                                 />
                                             </template>
-                                            删除通知
+                                            删除指令
                                         </n-button>
                                         <n-button :color="btnConfig.exp" v-if="compHandle.operation.isExport" @click="compHandle.exportData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.exp">
@@ -66,7 +66,7 @@
                                                     :is="renderIcon(btnConfig.ico.exp)"
                                                 />
                                             </template>
-                                            导出通知
+                                            导出指令
                                         </n-button>
                                         <n-button :color="btnConfig.ref" :loading="compData.loading" @click="compHandle.getTableData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.ref">
@@ -144,6 +144,8 @@
         <DeleteModal ref="deleteModalRef"/>
         <!-- 修改、新增抽屉 -->
         <AddModal ref="addModalRef" @refreshTable="compHandle.getTableData()"/>
+        <!-- 完成弹窗 -->
+        <Finish ref="FinishRef" @refreshTable="compHandle.getTableData()"/>
         <!-- 文件预览 -->
         <FileView ref="FileViewRef"/>
     </div>
@@ -161,14 +163,17 @@ import {Search} from "@/app/admin/untils/FuzzySearch"
 import {useMessage} from "naive-ui"
 import DeleteModal from '@/app/admin/component/deleteModal.vue'
 import AddModal from './add.vue'
+import Finish from './finish.vue'
 import FileView from '@/app/admin/component/fileView.vue'
-import {FindOfficalInfo, DeleteOfficalInfo, PublishOfficalInfo} from "@/app/admin/api/officalInfo"
+import {DeleteDispatchInstruction, FindByUserId, SignDispatchInstruction} from "@/app/admin/api/dispatchInstruction"
+import {getAllUsers} from "@/app/admin/api/user"
 
 const message = useMessage()
 const appStore = appPinia()
 const deleteModalRef = ref(null)
 const addModalRef = ref(null)
 const FileViewRef = ref(null)
+const FinishRef = ref(null)
 const compData = reactive({
     allData: [],
     tableData: [],
@@ -182,10 +187,12 @@ const compData = reactive({
     searchForm: {
         keyWord: '',
     },
-    rowKey: (row: any) => row.InfoId,
+    rowKey: (row: any) => row.DispId,
     checkedRowKeys: [],
 })
 const compHandle = reactive({
+    UserID: appStore.userInfo.UserID,
+    userList: [],
     operation: {},
     getTableData() {
         compData.searchForm.keyWord = ''
@@ -193,14 +200,9 @@ const compHandle = reactive({
         let params = {
             PageSize: 999999999,
             PageIndex: 1,
-            OrderField: "",
-            OrderType: "",
-            BeginDT: "",
-            EndDT: "",
-            FuzzyName: "",
-            UserID: 1
+            UserID: appStore.userInfo.UserID
         }
-        FindOfficalInfo(params).then((res) => {
+        FindByUserId(params).then((res) => {
             let data = res.data.Data
             compData.tableData = data || []
             compData.allData = data || []
@@ -209,7 +211,7 @@ const compHandle = reactive({
         })
     },
     del(row: any) {
-        deleteItem(row.InfoId)
+        deleteItem(row.DispId)
     },
     dels() {
         if (compData.checkedRowKeys.length <= 0){
@@ -222,21 +224,17 @@ const compHandle = reactive({
         })
     },
     edit(row: any) {
-        addModalRef.value.openModal({type: 'edit', itemData: row})
+        addModalRef.value.openModal({type: 'edit', itemData: row,userList: compHandle.userList})
     },
     add() {
-        addModalRef.value.openModal({})
+        addModalRef.value.openModal({userList: compHandle.userList})
     },
     distribute(row: object) {
         compData.loading = true
-        let params = {
-            Id: row.InfoId,
-            Handle: 1,
-        }
-        PublishOfficalInfo(params).then(
+        SignDispatchInstruction(row.DispId).then(
             res =>{
                 if (res.data.Code === 0){
-                    message.warning("下发失败，请重试")
+                    message.warning("签收失败，请重试")
                 }else {
                     message.success("删除成功")
                     compHandle.getTableData()
@@ -245,6 +243,9 @@ const compHandle = reactive({
         ).finally(() => {
             compData.loading = false
         })
+    },
+    finish(row: object) {
+        FinishRef.value.openModal({itemData: row})
     },
     check(rowKeys: any) {
         compData.checkedRowKeys = rowKeys
@@ -259,11 +260,11 @@ const compHandle = reactive({
         compData.columns = compData.sourceColumns.filter((item) => value.indexOf(item.key) !== -1)
     },
     search() {
-        let props = ['Title', 'Detail']
+        let props = ['Title', 'DispTime', 'SignTime', 'InstContent', 'FinishTime', 'FinishDetail']
         compData.tableData  = Search(compData.searchForm.keyWord, props, deepCopy(compData.allData))
     },
     exportData() {
-        ExportTable(compData.allData, compData.columns, '文件通知下发')
+        ExportTable(compData.allData, compData.columns, '调度指令下发')
     },
 })
 
@@ -287,7 +288,7 @@ const determineUserPermissions = () => {
 //删除
 const deleteItem = (ids: string | number) => {
     compData.loading = true
-    DeleteOfficalInfo(ids).then(
+    DeleteDispatchInstruction(ids).then(
         res =>{
             if (res.data.Code === 0){
                 message.warning("删除失败，请重试")
@@ -301,11 +302,18 @@ const deleteItem = (ids: string | number) => {
     })
 }
 
+const getUserList = () => {
+    getAllUsers().then(res => {
+        compHandle.userList = res.data
+    })
+}
+
 
 const pageContentRef = ref(null)
 const pageContentHeight = ref(0)
 onMounted(async ()=>{
     pageContentHeight.value = pageContentRef.value.offsetHeight
+    await getUserList()
     await determineUserPermissions()
     await compHandle.getTableData()
     await initTable()

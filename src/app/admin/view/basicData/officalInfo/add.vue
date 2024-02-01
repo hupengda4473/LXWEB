@@ -195,10 +195,10 @@ const drawerConfirm = (e: MouseEvent) => {
             let params = deepCopy(compData.data)
             params.EffectiveTime = new Date(compData.data.EffectiveTime).format('yyyy-MM-dd')
             params.ExpiringTime = new Date(compData.data.ExpiringTime).format('yyyy-MM-dd')
-            params.CreateTime = new Date().format('yyyy-MM-dd')
             const appStore = appPinia()
             params.UserId = appStore.userInfo.UserID
             if (compData.type === 'add') {
+                params.CreateTime = new Date().format('yyyy-MM-dd')
                 AddOfficalInfo( params ).then(res => {
                     if (res.data.Code === 0) {
                         message.warning("新增失败，请重试")
