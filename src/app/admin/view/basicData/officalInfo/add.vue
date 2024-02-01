@@ -4,7 +4,7 @@
             style="width: 600px;"
             header-style="text-align: center;"
             footer-style="text-align: center;"
-            :title="compData.type === 'add' ? '新增措施' : '编辑措施'"
+            :title="compData.type === 'add' ? '新增通知' : '编辑通知'"
             :bordered="false"
             size="huge"
             role="dialog"
@@ -18,25 +18,31 @@
                 :model="compData.data"
                 :rules="rules"
             >
-                <n-form-item label="措施名称" path="Title">
-                    <n-input clearable v-model:value="compData.data.Title" type="text" placeholder="请输入措施名称" />
+                <n-form-item label="通知标题" path="Title">
+                    <n-input clearable v-model:value="compData.data.Title" type="text" placeholder="请输入名称" />
                 </n-form-item>
-                <n-form-item label="措施类型" path="InfoType">
+                <n-form-item label="通知状态" path="Status">
                     <n-select
-                        v-model:value="compData.data.InfoType"
+                        v-model:value="compData.data.Status"
                         filterable
                         clearable
-                        placeholder="请选择措施类型"
-                        :options="floodControlMeasuresType"
+                        placeholder="请选择状态"
+                        :options="officalInfoType"
                     />
                 </n-form-item>
-                <n-form-item label="措施详情" path="Detail">
-                    <n-input clearable v-model:value="compData.data.Detail" type="textarea" placeholder="请输入措施详情" />
+                <n-form-item label="生效时间" path="EffectiveTime">
+                    <n-date-picker style="width: 100%" placement="bottom-end" v-model:value="compData.data.EffectiveTime" type="date" :shortcuts="compData.shortcuts" placeholder="请选生效时间"/>
                 </n-form-item>
-                <n-form-item label="上传文件" path="DocFile">
+                <n-form-item label="截止时间" path="ExpiringTime">
+                    <n-date-picker style="width: 100%" placement="bottom-end" v-model:value="compData.data.ExpiringTime" type="date" :shortcuts="compData.shortcuts" placeholder="请选截止时间"/>
+                </n-form-item>
+                <n-form-item label="详情" path="Brief">
+                    <n-input clearable v-model:value="compData.data.Brief" type="textarea" placeholder="请输入详情" />
+                </n-form-item>
+                <n-form-item label="上传文件" path="UploadFiles">
                     <n-upload
                         :max="3"
-                        :action="requestFileUrl + '/api/FloodControlInfo/UploadFile'"
+                        :action="requestFileUrl + '/api/OfficalInfo/UploadFile'"
                         :on-before-upload="beforeUpload"
                         :on-finish="handleFinish"
                         :headers="{ Authorization: 'Bearer ' + token }"
@@ -65,35 +71,44 @@
 import {defineEmits, defineExpose, reactive, ref} from "vue"
 import {FormInst, UploadFileInfo, useMessage} from "naive-ui"
 import {deepCopy} from "@/packages/utils/utils"
-import {formSize, floodControlMeasuresType, requestUrl, requestFileUrl} from '@/app/admin/config/config'
+import {formSize, requestUrl, requestFileUrl, officalInfoType} from '@/app/admin/config/config'
 import locaStore from "@/packages/utils/locaStore"
-import {AddFloodControlInfo, ModifyFloodControlInfo} from "@/app/admin/api/floodControlInfo"
+import {AddOfficalInfo, ModifyOfficalInfo} from "@/app/admin/api/officalInfo"
+import appPinia from "@/packages/pinia/app"
 
 const message = useMessage()
 const token = locaStore.get('token_lx_web')
 
-type AddParams = {
-    InfoId: string | number,
-    Title: string,
-    Detail: string,
-    InfoType: string | number | null,
-    UploadFiles: any,
-}
 type Song = {
     showAddModal: boolean,
     type: string,
-    generalOptions: object [],
+    shortcuts: any,
     data: AddParams
+}
+type AddParams = {
+    InfoId: string | number,
+    Title: string,
+    Brief: string,
+    DocContent: string,
+    Status: string | number | null,
+    UploadFiles: any,
+    EffectiveTime: any,
+    ExpiringTime: any,
 }
 const compData = reactive<Song>({
     showAddModal: false,
     type: 'add',
-    generalOptions: [],
+    shortcuts: {
+        昨天: () => new Date().getTime() - 24 * 60 * 60 * 1000,
+    },
     data: {
         InfoId: 0,
         Title: '',
-        Detail: '',
-        InfoType: null,
+        Brief: '',
+        DocContent: '',
+        Status: null,
+        EffectiveTime: null,
+        ExpiringTime: null,
         UploadFiles: [],
     },
 })
@@ -101,17 +116,25 @@ const compData = reactive<Song>({
 const rules = {
     Title: {
         required: true,
-        message: '请输入措施名称',
+        message: '请输入名称',
         trigger: ['input', 'blur']
     },
-    Detail: {
+    Brief: {
         required: true,
-        message: '请输入措施详情',
+        message: '请输入详情',
         trigger: ['input', 'blur']
     },
-    InfoType: {
+    Status: {
         required: true,
-        message: '请选择措施类型',
+        message: '请选择类型',
+    },
+    EffectiveTime: {
+        required: true,
+        message: '请选择生效时间',
+    },
+    ExpiringTime: {
+        required: true,
+        message: '请选择截止时间',
     },
 }
 
@@ -121,13 +144,18 @@ const openModal = ({type = 'add', itemData = {}}: { type?: string; itemData?: ob
     compData.data = {
         InfoId: 0,
         Title: '',
-        Detail: '',
-        InfoType: null,
+        Brief: '',
+        DocContent: '',
+        Status: null,
+        EffectiveTime: null,
+        ExpiringTime: null,
         UploadFiles: [],
     }
     if (type === 'edit') {
         let data = deepCopy(itemData)
         compData.data = data
+        compData.data.EffectiveTime = new Date(data.EffectiveTime).getTime()
+        compData.data.ExpiringTime = new Date(data.ExpiringTime).getTime()
         compData.data.UploadFiles = data.UploadFiles && data.UploadFiles.length > 0 ? (data.UploadFiles || []) : []
     }
 }
@@ -164,8 +192,14 @@ const drawerConfirm = (e: MouseEvent) => {
     e.preventDefault()
     formRef.value?.validate((errors) => {
         if (!errors) {
+            let params = deepCopy(compData.data)
+            params.EffectiveTime = new Date(compData.data.EffectiveTime).format('yyyy-MM-dd')
+            params.ExpiringTime = new Date(compData.data.ExpiringTime).format('yyyy-MM-dd')
+            params.CreateTime = new Date().format('yyyy-MM-dd')
+            const appStore = appPinia()
+            params.UserId = appStore.userInfo.UserID
             if (compData.type === 'add') {
-                AddFloodControlInfo( compData.data ).then(res => {
+                AddOfficalInfo( params ).then(res => {
                     if (res.data.Code === 0) {
                         message.warning("新增失败，请重试")
                     } else {
@@ -175,7 +209,7 @@ const drawerConfirm = (e: MouseEvent) => {
                     }
                 })
             } else {
-                ModifyFloodControlInfo( compData.data ).then(res => {
+                ModifyOfficalInfo( params ).then(res => {
                     if (res.data.Code === 0) {
                         message.warning("修改失败，请重试")
                     } else {

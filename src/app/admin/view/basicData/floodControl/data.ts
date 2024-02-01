@@ -1,7 +1,7 @@
 import {DataTableColumns, NButton, NImage, NPopconfirm, NPopover, NTag} from "naive-ui"
 import {h} from "vue"
-import {floodControlMeasuresType} from "@/app/admin/config/config"
-import {isImage} from "@/app/admin/untils/untils";
+import {floodControlType} from "@/app/admin/config/config"
+import {isImage} from "@/app/admin/untils/untils"
 
 const createColumns = ({compHandle}): DataTableColumns => {
     const arr = [
@@ -9,26 +9,20 @@ const createColumns = ({compHandle}): DataTableColumns => {
             type: "selection",
         },
         {
-            title: "措施名称",
+            title: "名称",
             key: "Title",
             align: "center",
             defaultSortOrder: 'descend',
             sorter: 'default',
         },
         {
-            title: "措施类型",
-            key: "InfoType",
+            title: "类型",
+            key: "FeatureType",
             align: "center",
             sorter: 'default',
             render(row: any){
-                return floodControlMeasuresType.find(item => item.value === row.InfoType).label
+                return floodControlType.find(item => item.value === row.FeatureType).label
             }
-        },
-        {
-            title: "创建时间",
-            key: "CreateTime",
-            align: "center",
-            sorter: 'default',
         },
         {
             title: "文件",

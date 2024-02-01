@@ -17,7 +17,7 @@
                                         <n-grid cols="24" x-gap="30" item-responsive responsive="screen">
                                             <n-grid-item span="24 m:12 l:12">
                                                 <n-form-item label="模糊搜索：" path="keyWord">
-                                                    <n-input clearable v-model:value="compData.searchForm.keyWord" placeholder="请输入关键字"/>
+                                                    <n-input clearable v-model:value="compData.searchForm.keyWord" placeholder="请输入名称"/>
                                                 </n-form-item>
                                             </n-grid-item>
                                             <n-grid-item span="24 m:8 l:6">
@@ -48,7 +48,7 @@
                                                     :is="renderIcon(btnConfig.ico.add)"
                                                 />
                                             </template>
-                                            新增措施
+                                            新增
                                         </n-button>
                                         <n-button :color="btnConfig.del" v-if="compHandle.operation.isDelete" @click="compHandle.dels()">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.del">
@@ -57,7 +57,7 @@
                                                     :is="renderIcon(btnConfig.ico.del)"
                                                 />
                                             </template>
-                                            删除措施
+                                            删除
                                         </n-button>
                                         <n-button :color="btnConfig.exp" v-if="compHandle.operation.isExport" @click="compHandle.exportData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.exp">
@@ -66,7 +66,7 @@
                                                     :is="renderIcon(btnConfig.ico.exp)"
                                                 />
                                             </template>
-                                            导出措施
+                                            导出
                                         </n-button>
                                         <n-button :color="btnConfig.ref" :loading="compData.loading" @click="compHandle.getTableData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.ref">
@@ -162,7 +162,7 @@ import {useMessage} from "naive-ui"
 import DeleteModal from '@/app/admin/component/deleteModal.vue'
 import AddModal from './add.vue'
 import FileView from '@/app/admin/component/fileView.vue'
-import {DeleteFloodControlInfo, FindFloodControlInfo} from "@/app/admin/api/floodControlInfo"
+import {DeleteFloodControlFeature, FindFloodControlFeature} from "@/app/admin/api/floodControl"
 
 const message = useMessage()
 const appStore = appPinia()
@@ -182,7 +182,7 @@ const compData = reactive({
     searchForm: {
         keyWord: '',
     },
-    rowKey: (row: any) => row.InfoId,
+    rowKey: (row: any) => row.FeatureId,
     checkedRowKeys: [],
 })
 const compHandle = reactive({
@@ -200,7 +200,7 @@ const compHandle = reactive({
             FuzzyName: "",
             UserID: 1
         }
-        FindFloodControlInfo(params).then((res) => {
+        FindFloodControlFeature(params).then((res) => {
             let data = res.data.Data
             compData.tableData = data || []
             compData.allData = data || []
@@ -209,14 +209,14 @@ const compHandle = reactive({
         })
     },
     del(row: any) {
-        deleteItem(row.InfoId)
+        deleteItem(row.FeatureId)
     },
     dels() {
         if (compData.checkedRowKeys.length <= 0){
             return message.warning("请选择要删除的项")
         }
         let ids = compData.checkedRowKeys.join(',')
-        deleteModalRef.value.openDeleteModal('确认要删除所选措施吗？',function deleteFun() {
+        deleteModalRef.value.openDeleteModal('确认要删除所选数据吗？',function deleteFun() {
             deleteItem(ids)
             compData.checkedRowKeys = []
         })
@@ -240,11 +240,11 @@ const compHandle = reactive({
         compData.columns = compData.sourceColumns.filter((item) => value.indexOf(item.key) !== -1)
     },
     search() {
-        let props = ['AssociationName', 'Tel', 'Manager', 'Remark']
+        let props = ['Title', 'Detail']
         compData.tableData  = Search(compData.searchForm.keyWord, props, deepCopy(compData.allData))
     },
     exportData() {
-        ExportTable(compData.allData, compData.columns, '防洪措施管理')
+        ExportTable(compData.allData, compData.columns, '防洪基础信息')
     },
 })
 
@@ -268,7 +268,7 @@ const determineUserPermissions = () => {
 //删除
 const deleteItem = (ids: string | number) => {
     compData.loading = true
-    DeleteFloodControlInfo(ids).then(
+    DeleteFloodControlFeature(ids).then(
         res =>{
             if (res.data.Code === 0){
                 message.warning("删除失败，请重试")

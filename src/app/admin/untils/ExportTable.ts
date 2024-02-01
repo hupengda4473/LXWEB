@@ -11,7 +11,7 @@ export function ExportTable(dataList, tableColumns, fileName, childColumns = [])
     for (const i in dataList) {
         const obj = {"序号": Number(i) + 1}
         for (const j in tableColumns) {
-            if (!tableColumns[j].type && tableColumns[j].type !== 'selection' && tableColumns[j].title !== '操作') {
+            if (!tableColumns[j].type && tableColumns[j].type !== 'selection' && tableColumns[j].title !== '操作' && tableColumns[j].title !== '文件' && tableColumns[j].title !== '描述' && tableColumns[j].title !== '状态') {
                 const key = tableColumns[j].title
                 let value = ''
                 if (tableColumns[j].render != null) {

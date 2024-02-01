@@ -48,7 +48,7 @@
                                                     :is="renderIcon(btnConfig.ico.add)"
                                                 />
                                             </template>
-                                            新增措施
+                                            新增通知
                                         </n-button>
                                         <n-button :color="btnConfig.del" v-if="compHandle.operation.isDelete" @click="compHandle.dels()">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.del">
@@ -57,7 +57,7 @@
                                                     :is="renderIcon(btnConfig.ico.del)"
                                                 />
                                             </template>
-                                            删除措施
+                                            删除通知
                                         </n-button>
                                         <n-button :color="btnConfig.exp" v-if="compHandle.operation.isExport" @click="compHandle.exportData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.exp">
@@ -66,7 +66,7 @@
                                                     :is="renderIcon(btnConfig.ico.exp)"
                                                 />
                                             </template>
-                                            导出措施
+                                            导出通知
                                         </n-button>
                                         <n-button :color="btnConfig.ref" :loading="compData.loading" @click="compHandle.getTableData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.ref">
@@ -162,7 +162,7 @@ import {useMessage} from "naive-ui"
 import DeleteModal from '@/app/admin/component/deleteModal.vue'
 import AddModal from './add.vue'
 import FileView from '@/app/admin/component/fileView.vue'
-import {DeleteFloodControlInfo, FindFloodControlInfo} from "@/app/admin/api/floodControlInfo"
+import {FindOfficalInfo, DeleteOfficalInfo} from "@/app/admin/api/officalInfo"
 
 const message = useMessage()
 const appStore = appPinia()
@@ -200,7 +200,7 @@ const compHandle = reactive({
             FuzzyName: "",
             UserID: 1
         }
-        FindFloodControlInfo(params).then((res) => {
+        FindOfficalInfo(params).then((res) => {
             let data = res.data.Data
             compData.tableData = data || []
             compData.allData = data || []
@@ -216,7 +216,7 @@ const compHandle = reactive({
             return message.warning("请选择要删除的项")
         }
         let ids = compData.checkedRowKeys.join(',')
-        deleteModalRef.value.openDeleteModal('确认要删除所选措施吗？',function deleteFun() {
+        deleteModalRef.value.openDeleteModal('确认要删除所选数据吗？',function deleteFun() {
             deleteItem(ids)
             compData.checkedRowKeys = []
         })
@@ -240,11 +240,11 @@ const compHandle = reactive({
         compData.columns = compData.sourceColumns.filter((item) => value.indexOf(item.key) !== -1)
     },
     search() {
-        let props = ['AssociationName', 'Tel', 'Manager', 'Remark']
+        let props = ['Title', 'Detail']
         compData.tableData  = Search(compData.searchForm.keyWord, props, deepCopy(compData.allData))
     },
     exportData() {
-        ExportTable(compData.allData, compData.columns, '防洪措施管理')
+        ExportTable(compData.allData, compData.columns, '文件通知下发')
     },
 })
 
@@ -268,7 +268,7 @@ const determineUserPermissions = () => {
 //删除
 const deleteItem = (ids: string | number) => {
     compData.loading = true
-    DeleteFloodControlInfo(ids).then(
+    DeleteOfficalInfo(ids).then(
         res =>{
             if (res.data.Code === 0){
                 message.warning("删除失败，请重试")

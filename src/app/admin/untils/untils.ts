@@ -95,8 +95,16 @@ const getPamFormat = (hour) => {
     }
 }
 
+/*
+* 判断是否是图片
+* */
+const isImage = (type: string) => {
+    return type === '.png' || type === '.jpg' || type === '.gif' || type === 'webp' || type.includes('image')
+}
+
 export {
     getPower,
     treeDeleteChildren,
     getPamFormat,
+    isImage,
 }

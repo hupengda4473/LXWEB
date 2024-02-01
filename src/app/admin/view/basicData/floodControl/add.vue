@@ -4,7 +4,7 @@
             style="width: 600px;"
             header-style="text-align: center;"
             footer-style="text-align: center;"
-            :title="compData.type === 'add' ? '新增措施' : '编辑措施'"
+            :title="compData.type === 'add' ? '新增' : '编辑'"
             :bordered="false"
             size="huge"
             role="dialog"
@@ -18,25 +18,25 @@
                 :model="compData.data"
                 :rules="rules"
             >
-                <n-form-item label="措施名称" path="Title">
-                    <n-input clearable v-model:value="compData.data.Title" type="text" placeholder="请输入措施名称" />
+                <n-form-item label="名称" path="Title">
+                    <n-input clearable v-model:value="compData.data.Title" type="text" placeholder="请输入名称" />
                 </n-form-item>
-                <n-form-item label="措施类型" path="InfoType">
+                <n-form-item label="类型" path="FeatureType">
                     <n-select
-                        v-model:value="compData.data.InfoType"
+                        v-model:value="compData.data.FeatureType"
                         filterable
                         clearable
-                        placeholder="请选择措施类型"
-                        :options="floodControlMeasuresType"
+                        placeholder="请选择类型"
+                        :options="floodControlType"
                     />
                 </n-form-item>
-                <n-form-item label="措施详情" path="Detail">
-                    <n-input clearable v-model:value="compData.data.Detail" type="textarea" placeholder="请输入措施详情" />
+                <n-form-item label="详情" path="Detail">
+                    <n-input clearable v-model:value="compData.data.Detail" type="textarea" placeholder="请输入详情" />
                 </n-form-item>
-                <n-form-item label="上传文件" path="DocFile">
+                <n-form-item label="上传文件" path="UploadFiles">
                     <n-upload
                         :max="3"
-                        :action="requestFileUrl + '/api/FloodControlInfo/UploadFile'"
+                        :action="requestFileUrl + '/api/FloodControlFeature/UploadFile'"
                         :on-before-upload="beforeUpload"
                         :on-finish="handleFinish"
                         :headers="{ Authorization: 'Bearer ' + token }"
@@ -65,19 +65,20 @@
 import {defineEmits, defineExpose, reactive, ref} from "vue"
 import {FormInst, UploadFileInfo, useMessage} from "naive-ui"
 import {deepCopy} from "@/packages/utils/utils"
-import {formSize, floodControlMeasuresType, requestUrl, requestFileUrl} from '@/app/admin/config/config'
+import {formSize, requestUrl, requestFileUrl, floodControlType} from '@/app/admin/config/config'
 import locaStore from "@/packages/utils/locaStore"
-import {AddFloodControlInfo, ModifyFloodControlInfo} from "@/app/admin/api/floodControlInfo"
+import {AddFloodControlFeature, ModifyFloodControlFeature} from "@/app/admin/api/floodControl"
 
 const message = useMessage()
 const token = locaStore.get('token_lx_web')
 
 type AddParams = {
-    InfoId: string | number,
+    FeatureId: string | number,
     Title: string,
     Detail: string,
-    InfoType: string | number | null,
+    FeatureType: string | number | null,
     UploadFiles: any,
+    GisInfo: any,
 }
 type Song = {
     showAddModal: boolean,
@@ -90,28 +91,29 @@ const compData = reactive<Song>({
     type: 'add',
     generalOptions: [],
     data: {
-        InfoId: 0,
+        FeatureId: 0,
         Title: '',
         Detail: '',
-        InfoType: null,
+        FeatureType: null,
         UploadFiles: [],
+        GisInfo: '',
     },
 })
 
 const rules = {
     Title: {
         required: true,
-        message: '请输入措施名称',
+        message: '请输入名称',
         trigger: ['input', 'blur']
     },
     Detail: {
         required: true,
-        message: '请输入措施详情',
+        message: '请输入详情',
         trigger: ['input', 'blur']
     },
-    InfoType: {
+    FeatureType: {
         required: true,
-        message: '请选择措施类型',
+        message: '请选择类型',
     },
 }
 
@@ -119,11 +121,12 @@ const openModal = ({type = 'add', itemData = {}}: { type?: string; itemData?: ob
     compData.showAddModal = true
     compData.type = type
     compData.data = {
-        InfoId: 0,
+        FeatureId: 0,
         Title: '',
         Detail: '',
-        InfoType: null,
+        FeatureType: null,
         UploadFiles: [],
+        GisInfo: '',
     }
     if (type === 'edit') {
         let data = deepCopy(itemData)
@@ -165,7 +168,7 @@ const drawerConfirm = (e: MouseEvent) => {
     formRef.value?.validate((errors) => {
         if (!errors) {
             if (compData.type === 'add') {
-                AddFloodControlInfo( compData.data ).then(res => {
+                AddFloodControlFeature( compData.data ).then(res => {
                     if (res.data.Code === 0) {
                         message.warning("新增失败，请重试")
                     } else {
@@ -175,7 +178,7 @@ const drawerConfirm = (e: MouseEvent) => {
                     }
                 })
             } else {
-                ModifyFloodControlInfo( compData.data ).then(res => {
+                ModifyFloodControlFeature( compData.data ).then(res => {
                     if (res.data.Code === 0) {
                         message.warning("修改失败，请重试")
                     } else {

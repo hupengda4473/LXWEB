@@ -1,7 +1,7 @@
 import {DataTableColumns, NButton, NImage, NPopconfirm, NPopover, NTag} from "naive-ui"
 import {h} from "vue"
-import {floodControlMeasuresType} from "@/app/admin/config/config"
-import {isImage} from "@/app/admin/untils/untils";
+import {officalInfoType} from "@/app/admin/config/config"
+import {isImage} from "@/app/admin/untils/untils"
 
 const createColumns = ({compHandle}): DataTableColumns => {
     const arr = [
@@ -9,24 +9,36 @@ const createColumns = ({compHandle}): DataTableColumns => {
             type: "selection",
         },
         {
-            title: "措施名称",
+            title: "标题",
             key: "Title",
             align: "center",
             defaultSortOrder: 'descend',
             sorter: 'default',
         },
         {
-            title: "措施类型",
-            key: "InfoType",
+            title: "状态",
+            key: "FeatureType",
             align: "center",
             sorter: 'default',
             render(row: any){
-                return floodControlMeasuresType.find(item => item.value === row.InfoType).label
+                return officalInfoType.find(item => item.value === row.Status).label
             }
         },
         {
             title: "创建时间",
             key: "CreateTime",
+            align: "center",
+            sorter: 'default',
+        },
+        {
+            title: "生效时间",
+            key: "EffectiveTime",
+            align: "center",
+            sorter: 'default',
+        },
+        {
+            title: "截止时间",
+            key: "ExpiringTime",
             align: "center",
             sorter: 'default',
         },
@@ -62,7 +74,7 @@ const createColumns = ({compHandle}): DataTableColumns => {
         },
         {
             title: "描述",
-            key: "Detail",
+            key: "Brief",
             align: "center",
             sorter: 'default',
             width: 200,
@@ -76,7 +88,7 @@ const createColumns = ({compHandle}): DataTableColumns => {
                     }
                 },{
                     default:()=>{
-                        return row.Detail
+                        return row.Brief
                     },
                     trigger:()=>{
                         return h(NTag,{

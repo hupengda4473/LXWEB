@@ -1,5 +1,5 @@
 <template>
-    <div class="pageContent" ref="pageContentRef">
+    <div class="filePageContent" ref="pageContentRef">
         <n-modal v-model:show="compData.showAddModal" ref="modalRef">
             <n-card
                 style="width: 60%;"
@@ -88,13 +88,11 @@ const columns = ref([])
 * data 后台返回文件数据
 * format excel表格中时间的格式
 * */
-const viewFile = (data: object, format: string) => {
+const viewFile = (data: object, modalHeight,format?: string) => {
     compData.showAddModal = true
     compData.fileData = data
-    compData.timeFormat = format
-    console.log(data)
-
-    pageContentHeight.value = pageContentRef.value.offsetHeight - 240
+    compData.timeFormat = format || 'yyyy-MM-dd'
+    pageContentHeight.value = modalHeight - 240
     if (data.type === ".docx" || data.type === ".doc") {
         compData.fileType = 1
         readWorkbookFromRemoteFile(data.url)
@@ -224,19 +222,20 @@ defineExpose({
 </script>
 
 <style scoped lang="less">
-.scrollbar{
-    overflow-y: auto;
-}
-.scrollbar::-webkit-scrollbar {
-    width: 5px;
-}
+.filePageContent{
+    .scrollbar{
+        overflow-y: auto;
+        &.hidden{
+            overflow: hidden;
+        }
+    }
+    .scrollbar::-webkit-scrollbar {
+        width: 5px;
+    }
 
-.scrollbar::-webkit-scrollbar-thumb {
-    background: #999999;
-    border-radius: 5px;
-}
-
-.hidden{
-    overflow: hidden;
+    .scrollbar::-webkit-scrollbar-thumb {
+        background: #999999;
+        border-radius: 5px;
+    }
 }
 </style>

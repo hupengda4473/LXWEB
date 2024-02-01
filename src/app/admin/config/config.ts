@@ -189,3 +189,20 @@ export const floodControlMeasuresType = [
     {label: '防洪通知', value: 2},
     {label: '防洪工作部署', value: 3},
 ]
+
+/*
+* 防洪基础信息类型
+* */
+export const floodControlType = [
+    {label: '防洪堤', value: 1},
+    {label: '渠段', value: 2},
+    {label: '自然河道', value: 3},
+]
+
+/*
+* 文件下发通知类型
+* */
+export const officalInfoType = [
+    {label: '草稿', value: 0},
+    {label: '下发', value: 2},
+]
