@@ -38,7 +38,7 @@ const ModifyPaymentRecord = (params: object) =>{
 const DeletePaymentRecord = (id: string | number) =>{
     return post('/api/PaymentRecord/Delete', id)
 }
-const PaymentStatistics = (year: string) =>{
+const PaymentStatistics = (year: string | number) =>{
     return post('/api/PaymentRecord/PaymentStatistics', year)
 }
 
