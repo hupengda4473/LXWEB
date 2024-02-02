@@ -45,24 +45,6 @@
                                 </n-tab-pane>
                                 <n-tab-pane name="数据操作">
                                     <n-space>
-                                        <n-button :color="btnConfig.add" v-if="compHandle.operation.isAdd" @click="compHandle.add()">
-                                            <template #icon v-if="btnConfig.showIco && btnConfig.ico.add">
-                                                <component
-                                                    class="ico"
-                                                    :is="renderIcon(btnConfig.ico.add)"
-                                                />
-                                            </template>
-                                            新增
-                                        </n-button>
-                                        <n-button :color="btnConfig.del" v-if="compHandle.operation.isDelete" @click="compHandle.dels()">
-                                            <template #icon v-if="btnConfig.showIco && btnConfig.ico.del">
-                                                <component
-                                                    class="ico"
-                                                    :is="renderIcon(btnConfig.ico.del)"
-                                                />
-                                            </template>
-                                            删除
-                                        </n-button>
                                         <n-button :color="btnConfig.exp" v-if="compHandle.operation.isExport" @click="compHandle.exportData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.exp">
                                                 <component
@@ -144,10 +126,6 @@
                 </n-space>
             </n-grid-item>
         </n-grid>
-        <!-- 删除提示框 -->
-        <DeleteModal ref="deleteModalRef"/>
-        <!-- 修改、新增抽屉 -->
-        <AddModal ref="addModalRef" @refreshTable="compHandle.getTableData()"/>
     </div>
 </template>
 
@@ -160,15 +138,9 @@ import appPinia from "@/packages/pinia/app"
 import { ExportTable } from '@/app/admin/untils/ExportTable'
 import {renderIcon} from '@/packages/config/icon.ts'
 import {Search} from "@/app/admin/untils/FuzzySearch"
-import {useMessage} from "naive-ui"
-import DeleteModal from '@/app/admin/component/deleteModal.vue'
-import AddModal from './add.vue'
-import {DeleteWaterAssociationCrop, FindAllChannelRatio} from "@/app/admin/api/WaterAssociationCrop"
+import {PayForWater} from "@/app/admin/api/waterFeeCollection"
 
-const message = useMessage()
 const appStore = appPinia()
-const deleteModalRef = ref(null)
-const addModalRef = ref(null)
 const compData = reactive({
     allData: [],
     tableData: [],
@@ -183,7 +155,7 @@ const compData = reactive({
         keyWord: '',
         time: new Date().getTime(),
     },
-    rowKey: (row: any) => row.Id,
+    rowKey: (row: any) => row.ID,
     checkedRowKeys: [],
 })
 const compHandle = reactive({
@@ -191,61 +163,36 @@ const compHandle = reactive({
     operation: {},
     getTableData() {
         compData.loading = true
-        FindAllChannelRatio(new Date(compData.searchForm.time).getFullYear()).then((res) => {
+        let year = new Date(compData.searchForm.time).getFullYear()
+        PayForWater( year ).then((res) => {
             let data = res.data
             compData.allData = data || []
+            compData.tableData = data || []
             compHandle.filterArr = []
-            // 表格过滤
             if (data && data.length > 0) {
                 for (let item of data) {
-                    if (!compHandle.filterArr.find(i => i.label === item.CropName) && item.CropName) {
+                    if (!compHandle.filterArr.find(i => i.label === item.Year) && item.Year) {
                         compHandle.filterArr.push({
-                            label: item.CropName,
-                            value: item.CropName
+                            label: item.Year,
+                            value: item.Year
                         })
                     }
                 }
             }
-            let props = ['Year', 'PlantingArea', 'AssociationName', 'CropName', 'BeginDT', 'EndDT']
-            compData.tableData  = Search(compData.searchForm.keyWord, props, deepCopy(compData.allData))
             initTable()
         }).finally(() => {
             compData.loading = false
         })
     },
-    del(row: any) {
-        deleteItem(row.Id)
-    },
-    dels() {
-        if (compData.checkedRowKeys.length <= 0){
-            return message.warning("请选择要删除的项")
-        }
-        let ids = compData.checkedRowKeys.join(',')
-        deleteModalRef.value.openDeleteModal('确认要删除所选数据吗？',function deleteFun() {
-            deleteItem(ids)
-            compData.checkedRowKeys = []
-        })
-    },
-    edit(row: any) {
-        addModalRef.value.openModal({type: 'edit', itemData: row})
-    },
-    add() {
-        addModalRef.value.openModal({})
-    },
-    check(rowKeys: any) {
-        compData.checkedRowKeys = rowKeys
-    },
-    tableSize() {
-
-    },
     handleColumnsOptions(value: (string | number)[]) {
         compData.columns = compData.sourceColumns.filter((item) => value.indexOf(item.key) !== -1)
     },
     search() {
-        compHandle.getTableData()
+        let props = ['Year', 'AssociationName', 'PlantArea', 'TotalWater', 'PlantArea', 'StandardWaterPrice', 'EnforcementPrice', 'TotalWaterAmount', 'WaterSavingRewardAmount']
+        compData.tableData  = Search(compData.searchForm.keyWord, props, deepCopy(compData.allData))
     },
     exportData() {
-        ExportTable(compData.allData, compData.columns, '种植结构管理')
+        ExportTable(compData.allData, compData.columns, '水费计算缴纳')
     },
 })
 
@@ -265,24 +212,6 @@ const initTable = () => {
 const determineUserPermissions = () => {
     compHandle.operation = appStore.currentRouter.meta.operation
 }
-
-//删除
-const deleteItem = (ids: string | number) => {
-    compData.loading = true
-    DeleteWaterAssociationCrop(ids).then(
-        res =>{
-            if (res.data.Code === 0){
-                message.warning("删除失败，请重试")
-            }else {
-                message.success("删除成功")
-                compHandle.getTableData()
-            }
-        }
-    ).finally(() => {
-        compData.loading = false
-    })
-}
-
 
 const pageContentRef = ref(null)
 const pageContentHeight = ref(0)

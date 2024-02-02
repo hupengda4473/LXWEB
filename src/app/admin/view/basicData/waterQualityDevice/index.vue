@@ -15,17 +15,42 @@
                                 <n-tab-pane name="数据查询">
                                     <n-form style="margin-bottom: -24px" label-placement="left" label-align="right" :show-label="true" ref="searchFormRef" inline :model="compData.searchForm">
                                         <n-grid cols="24" x-gap="30" item-responsive responsive="screen">
-                                            <n-grid-item span="24 m:6 l:6">
-                                                <n-form-item label="选择时间：" path="keyWord">
-                                                    <n-date-picker v-model:value="compData.searchForm.time" type="year" clearable style="width: 100%" />
+                                            <n-grid-item span="24 m:8 l:6">
+                                                <n-form-item label="分组" path="inputValue">
+                                                    <n-cascader
+                                                        v-model:value="compData.GroupID"
+                                                        :options="compData.generalOptions"
+                                                        @update:value="compHandle.getTableData()"
+                                                        :size="formSize"
+                                                        :show-path="true"
+                                                        :clearable="true"
+                                                        placeholder="请选择分组"
+                                                        check-strategy="all"
+                                                        expand-trigger="hover"
+                                                        label-field="GroupName"
+                                                        value-field="GroupID"
+                                                        children-field="Children"
+                                                    />
                                                 </n-form-item>
                                             </n-grid-item>
-                                            <n-grid-item span="24 m:6 l:6">
+                                            <n-grid-item span="24 m:8 l:6">
+                                                <n-form-item label="测点类型" path="inputValue">
+                                                    <n-select
+                                                        v-model:value="compData.pointType"
+                                                        @update:value="compHandle.getTableData()"
+                                                        filterable
+                                                        clearable
+                                                        placeholder="请选择测点类型"
+                                                        :options="pointType"
+                                                    />
+                                                </n-form-item>
+                                            </n-grid-item>
+                                            <n-grid-item span="24 m:8 l:6">
                                                 <n-form-item label="模糊搜索：" path="keyWord">
                                                     <n-input clearable v-model:value="compData.searchForm.keyWord" placeholder="请输入关键字"/>
                                                 </n-form-item>
                                             </n-grid-item>
-                                            <n-grid-item span="24 m:6 l:6">
+                                            <n-grid-item span="24 m:8 l:6">
                                                 <n-form-item>
                                                     <n-space>
                                                         <n-button attr-type="button" @click="compHandle.search" :color="btnConfig.ser">
@@ -52,7 +77,7 @@
                                                     :is="renderIcon(btnConfig.ico.add)"
                                                 />
                                             </template>
-                                            新增
+                                            新增测点
                                         </n-button>
                                         <n-button :color="btnConfig.del" v-if="compHandle.operation.isDelete" @click="compHandle.dels()">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.del">
@@ -61,7 +86,7 @@
                                                     :is="renderIcon(btnConfig.ico.del)"
                                                 />
                                             </template>
-                                            删除
+                                            删除测点
                                         </n-button>
                                         <n-button :color="btnConfig.exp" v-if="compHandle.operation.isExport" @click="compHandle.exportData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.exp">
@@ -70,7 +95,7 @@
                                                     :is="renderIcon(btnConfig.ico.exp)"
                                                 />
                                             </template>
-                                            导出
+                                            导出测点
                                         </n-button>
                                         <n-button :color="btnConfig.ref" :loading="compData.loading" @click="compHandle.getTableData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.ref">
@@ -145,9 +170,11 @@
             </n-grid-item>
         </n-grid>
         <!-- 删除提示框 -->
-        <DeleteModal ref="deleteModalRef"/>
+        <deleteModal ref="deleteModalRef"/>
         <!-- 修改、新增抽屉 -->
-        <AddModal ref="addModalRef" @refreshTable="compHandle.getTableData()"/>
+        <addModal ref="addModalRef" @refreshTable="compHandle.getTableData()"/>
+        <!-- 详情抽屉 -->
+        <Details ref="detailsModal"/>
     </div>
 </template>
 
@@ -155,21 +182,27 @@
 import {onMounted, reactive, ref} from "vue"
 import {createColumns} from "./data.ts"
 import {deepCopy} from "@/packages/utils/utils.ts"
-import {tableSetting, btnConfig} from '@/app/admin/config/config.js'
+import { tableSetting, btnConfig, pointType } from '@/app/admin/config/config.js'
+import {findAllLocation, delLocation} from '@/app/admin/api/station'
 import appPinia from "@/packages/pinia/app"
 import { ExportTable } from '@/app/admin/untils/ExportTable'
 import {renderIcon} from '@/packages/config/icon.ts'
 import {Search} from "@/app/admin/untils/FuzzySearch"
 import {useMessage} from "naive-ui"
-import DeleteModal from '@/app/admin/component/deleteModal.vue'
-import AddModal from './add.vue'
-import {DeleteWaterAssociationCrop, FindAllChannelRatio} from "@/app/admin/api/WaterAssociationCrop"
+import {formSize} from '@/app/admin/config/config'
+import deleteModal from '@/app/admin/component/deleteModal.vue'
+import addModal from './add.vue'
+import Details from './details.vue'
+import {getTree} from "@/app/admin/api/institution"
+import {treeDeleteChildren} from "@/app/admin/untils/untils"
 
 const message = useMessage()
 const appStore = appPinia()
 const deleteModalRef = ref(null)
 const addModalRef = ref(null)
+const detailsModal = ref(null)
 const compData = reactive({
+    showModal: false,
     allData: [],
     tableData: [],
     tableSizeValue: tableSetting.tableSizeValue,
@@ -181,50 +214,76 @@ const compData = reactive({
     columnsOptionsValue: [],
     searchForm: {
         keyWord: '',
-        time: new Date().getTime(),
     },
-    rowKey: (row: any) => row.Id,
+    rowKey: (row: any) => row.LocationID,
     checkedRowKeys: [],
+    generalOptions: [],
+    GroupID: '',
+    pointType: '',
 })
 const compHandle = reactive({
+    LocationType: [],
     filterArr: [],
     operation: {},
     getTableData() {
+        compData.searchForm.keyWord = ''
         compData.loading = true
-        FindAllChannelRatio(new Date(compData.searchForm.time).getFullYear()).then((res) => {
-            let data = res.data
+        let params = {
+            LocationType: pointType.find(item => item.label === '水质').value,
+            Groups: compData.GroupID,
+            LocationName: '',
+        }
+        findAllLocation(params).then((res) => {
+            let data = res.data.Data
+            compData.tableData = data || []
             compData.allData = data || []
+            compHandle.LocationType = []
             compHandle.filterArr = []
-            // 表格过滤
             if (data && data.length > 0) {
                 for (let item of data) {
-                    if (!compHandle.filterArr.find(i => i.label === item.CropName) && item.CropName) {
+                    if (!compHandle.LocationType.find(i => i.value === item.LocationType) && item.LocationType !== '0') {
+                        compHandle.LocationType.push({
+                            label: pointType.find( i2 => i2.value == item.LocationType).label,
+                            value: item.LocationType
+                        })
+                    }
+                    if (!compHandle.filterArr.find(i => i.label === item.GroupName) && item.GroupName) {
                         compHandle.filterArr.push({
-                            label: item.CropName,
-                            value: item.CropName
+                            label: item.GroupName,
+                            value: item.GroupID
                         })
                     }
                 }
             }
-            let props = ['Year', 'PlantingArea', 'AssociationName', 'CropName', 'BeginDT', 'EndDT']
-            compData.tableData  = Search(compData.searchForm.keyWord, props, deepCopy(compData.allData))
-            initTable()
+            compData.sourceColumns = createColumns({compHandle})
+            compData.columns = compData.sourceColumns
+            compData.columnsOptionsValue = compData.sourceColumns.map((item) => item.key)
+            compData.columnsOptions = compData.sourceColumns.filter((item) => item.type !== "selection").map((item) => {
+                if (item.key === "actions") {
+                    item.disabled = true
+                }
+                return item
+            })
         }).finally(() => {
             compData.loading = false
         })
     },
     del(row: any) {
-        deleteItem(row.Id)
+        deleteItem(row.LocationID)
     },
     dels() {
         if (compData.checkedRowKeys.length <= 0){
             return message.warning("请选择要删除的项")
         }
         let ids = compData.checkedRowKeys.join(',')
-        deleteModalRef.value.openDeleteModal('确认要删除所选数据吗？',function deleteFun() {
+        deleteModalRef.value.openDeleteModal('确认要删除所选测点吗？',function deleteFun() {
             deleteItem(ids)
             compData.checkedRowKeys = []
         })
+    },
+    details(row: any) {
+        console.log(row)
+        detailsModal.value.showDetails(row)
     },
     edit(row: any) {
         addModalRef.value.openModal({type: 'edit', itemData: row})
@@ -242,24 +301,13 @@ const compHandle = reactive({
         compData.columns = compData.sourceColumns.filter((item) => value.indexOf(item.key) !== -1)
     },
     search() {
-        compHandle.getTableData()
+        let props = ['LocationCode', 'LocationName', 'GroupName']
+        compData.tableData  = Search(compData.searchForm.keyWord, props, deepCopy(compData.allData))
     },
     exportData() {
-        ExportTable(compData.allData, compData.columns, '种植结构管理')
+        ExportTable(compData.allData, compData.columns, '测点管理')
     },
 })
-
-const initTable = () => {
-    compData.sourceColumns = createColumns({compHandle})
-    compData.columns = compData.sourceColumns
-    compData.columnsOptionsValue = compData.sourceColumns.map((item) => item.key)
-    compData.columnsOptions = compData.sourceColumns.filter((item) => item.type !== "selection").map((item) => {
-        if (item.key === "actions") {
-            item.disabled = true
-        }
-        return item
-    })
-}
 
 //判断用户权限
 const determineUserPermissions = () => {
@@ -269,7 +317,7 @@ const determineUserPermissions = () => {
 //删除
 const deleteItem = (ids: string | number) => {
     compData.loading = true
-    DeleteWaterAssociationCrop(ids).then(
+    delLocation(ids).then(
         res =>{
             if (res.data.Code === 0){
                 message.warning("删除失败，请重试")
@@ -283,11 +331,18 @@ const deleteItem = (ids: string | number) => {
     })
 }
 
+//获取分组
+const getTreeData = () => {
+    getTree(0).then(res => {
+        compData.generalOptions = treeDeleteChildren(res.data) || []
+    })
+}
 
 const pageContentRef = ref(null)
 const pageContentHeight = ref(0)
 onMounted(async ()=>{
     pageContentHeight.value = pageContentRef.value.offsetHeight
+    await getTreeData()
     await determineUserPermissions()
     await compHandle.getTableData()
 })

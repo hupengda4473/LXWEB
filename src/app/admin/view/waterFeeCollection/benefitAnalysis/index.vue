@@ -13,16 +13,38 @@
                                 pane-style="padding: 10px;"
                             >
                                 <n-tab-pane name="数据查询">
-                                    <n-form style="margin-bottom: -24px" label-placement="left" label-align="right" :show-label="true" ref="searchFormRef" inline :model="compData.searchForm">
+                                    <n-form
+                                        style="margin-bottom: -24px"
+                                        label-placement="left"
+                                        label-align="right"
+                                        :show-label="true"
+                                        ref="searchFormRef"
+                                        inline
+                                        :model="compData.searchForm"
+                                    >
                                         <n-grid cols="24" x-gap="30" item-responsive responsive="screen">
                                             <n-grid-item span="24 m:6 l:6">
-                                                <n-form-item label="选择时间：" path="keyWord">
-                                                    <n-date-picker v-model:value="compData.searchForm.time" type="year" clearable style="width: 100%" />
+                                                <n-form-item label="选择测点：" path="LocationId">
+                                                    <n-select
+                                                        v-model:value="compData.searchForm.LocationId"
+                                                        label-field="LocationName"
+                                                        value-field="LocationID"
+                                                        placeholder="请选择测点名称"
+                                                        filterable
+                                                        :options="compData.locationList"
+                                                    />
                                                 </n-form-item>
                                             </n-grid-item>
                                             <n-grid-item span="24 m:6 l:6">
-                                                <n-form-item label="模糊搜索：" path="keyWord">
-                                                    <n-input clearable v-model:value="compData.searchForm.keyWord" placeholder="请输入关键字"/>
+                                                <n-form-item label="选择时间：" path="time">
+                                                    <n-date-picker
+                                                        v-model:value="compData.searchForm.time"
+                                                        type="month"
+                                                        format="y年 M月"
+                                                        year-format="y年"
+                                                        month-format="M月"
+                                                        style="width: 100%"
+                                                    />
                                                 </n-form-item>
                                             </n-grid-item>
                                             <n-grid-item span="24 m:6 l:6">
@@ -45,24 +67,6 @@
                                 </n-tab-pane>
                                 <n-tab-pane name="数据操作">
                                     <n-space>
-                                        <n-button :color="btnConfig.add" v-if="compHandle.operation.isAdd" @click="compHandle.add()">
-                                            <template #icon v-if="btnConfig.showIco && btnConfig.ico.add">
-                                                <component
-                                                    class="ico"
-                                                    :is="renderIcon(btnConfig.ico.add)"
-                                                />
-                                            </template>
-                                            新增
-                                        </n-button>
-                                        <n-button :color="btnConfig.del" v-if="compHandle.operation.isDelete" @click="compHandle.dels()">
-                                            <template #icon v-if="btnConfig.showIco && btnConfig.ico.del">
-                                                <component
-                                                    class="ico"
-                                                    :is="renderIcon(btnConfig.ico.del)"
-                                                />
-                                            </template>
-                                            删除
-                                        </n-button>
                                         <n-button :color="btnConfig.exp" v-if="compHandle.operation.isExport" @click="compHandle.exportData">
                                             <template #icon v-if="btnConfig.showIco && btnConfig.ico.exp">
                                                 <component
@@ -117,6 +121,10 @@
                                 </n-tab-pane>
                             </n-tabs>
                         </template>
+                        <div id="echartBox" style="height: 400px;"></div>
+                    </n-card>
+                    <n-card :segmented="{content: true,footer:true}" header-style="padding:10px;font-size:14px"
+                            footer-style="padding:10px" content-style="padding:0px;" style="margin-bottom: 12px">
                         <n-data-table
                             style="padding-bottom: 24px"
                             :bordered="tableSetting.bordered"
@@ -137,38 +145,28 @@
                             :loading="compData.loading"
                             :size="compData.tableSizeValue"
                             :row-key="compData.rowKey"
-                            :max-height="pageContentHeight - 210"
+                            :max-height="pageContentHeight - 210 - 400 - 12"
                             @update:checked-row-keys="compHandle.check"
                         />
                     </n-card>
                 </n-space>
             </n-grid-item>
         </n-grid>
-        <!-- 删除提示框 -->
-        <DeleteModal ref="deleteModalRef"/>
-        <!-- 修改、新增抽屉 -->
-        <AddModal ref="addModalRef" @refreshTable="compHandle.getTableData()"/>
     </div>
 </template>
 
 <script lang="ts" setup>
 import {onMounted, reactive, ref} from "vue"
 import {createColumns} from "./data.ts"
-import {deepCopy} from "@/packages/utils/utils.ts"
 import {tableSetting, btnConfig} from '@/app/admin/config/config.js'
 import appPinia from "@/packages/pinia/app"
 import { ExportTable } from '@/app/admin/untils/ExportTable'
 import {renderIcon} from '@/packages/config/icon.ts'
-import {Search} from "@/app/admin/untils/FuzzySearch"
-import {useMessage} from "naive-ui"
-import DeleteModal from '@/app/admin/component/deleteModal.vue'
-import AddModal from './add.vue'
-import {DeleteWaterAssociationCrop, FindAllChannelRatio} from "@/app/admin/api/WaterAssociationCrop"
+import {FindMonthRoundReport, GetWaterBalance} from "@/app/admin/api/waterFeeCollection"
+import * as echarts from "echarts"
+import {findAllLocation} from "@/app/admin/api/station"
 
-const message = useMessage()
 const appStore = appPinia()
-const deleteModalRef = ref(null)
-const addModalRef = ref(null)
 const compData = reactive({
     allData: [],
     tableData: [],
@@ -179,73 +177,49 @@ const compData = reactive({
     sourceColumns: [],
     columnsOptions: [],
     columnsOptionsValue: [],
+    locationList: [],
     searchForm: {
-        keyWord: '',
+        LocationId: null,
         time: new Date().getTime(),
     },
-    rowKey: (row: any) => row.Id,
+    rowKey: (row: any) => row.ID,
     checkedRowKeys: [],
 })
 const compHandle = reactive({
     filterArr: [],
     operation: {},
+    time: new Date(compData.searchForm.time).format('yyyy-MM'),
     getTableData() {
         compData.loading = true
-        FindAllChannelRatio(new Date(compData.searchForm.time).getFullYear()).then((res) => {
+        let year = new Date(compData.searchForm.time).format('yyyy-MM')
+        FindMonthRoundReport( year ).then((res) => {
             let data = res.data
             compData.allData = data || []
+            compData.tableData = data || []
             compHandle.filterArr = []
-            // 表格过滤
             if (data && data.length > 0) {
                 for (let item of data) {
-                    if (!compHandle.filterArr.find(i => i.label === item.CropName) && item.CropName) {
+                    if (!compHandle.filterArr.find(i => i.label === item.Year) && item.Year) {
                         compHandle.filterArr.push({
-                            label: item.CropName,
-                            value: item.CropName
+                            label: item.Year,
+                            value: item.Year
                         })
                     }
                 }
             }
-            let props = ['Year', 'PlantingArea', 'AssociationName', 'CropName', 'BeginDT', 'EndDT']
-            compData.tableData  = Search(compData.searchForm.keyWord, props, deepCopy(compData.allData))
             initTable()
         }).finally(() => {
             compData.loading = false
         })
     },
-    del(row: any) {
-        deleteItem(row.Id)
-    },
-    dels() {
-        if (compData.checkedRowKeys.length <= 0){
-            return message.warning("请选择要删除的项")
-        }
-        let ids = compData.checkedRowKeys.join(',')
-        deleteModalRef.value.openDeleteModal('确认要删除所选数据吗？',function deleteFun() {
-            deleteItem(ids)
-            compData.checkedRowKeys = []
-        })
-    },
-    edit(row: any) {
-        addModalRef.value.openModal({type: 'edit', itemData: row})
-    },
-    add() {
-        addModalRef.value.openModal({})
-    },
-    check(rowKeys: any) {
-        compData.checkedRowKeys = rowKeys
-    },
-    tableSize() {
-
-    },
     handleColumnsOptions(value: (string | number)[]) {
         compData.columns = compData.sourceColumns.filter((item) => value.indexOf(item.key) !== -1)
     },
     search() {
-        compHandle.getTableData()
+        findAllLocationData()
     },
     exportData() {
-        ExportTable(compData.allData, compData.columns, '种植结构管理')
+        ExportTable(compData.allData, compData.columns, '供水效益分析')
     },
 })
 
@@ -266,30 +240,147 @@ const determineUserPermissions = () => {
     compHandle.operation = appStore.currentRouter.meta.operation
 }
 
-//删除
-const deleteItem = (ids: string | number) => {
-    compData.loading = true
-    DeleteWaterAssociationCrop(ids).then(
-        res =>{
-            if (res.data.Code === 0){
-                message.warning("删除失败，请重试")
-            }else {
-                message.success("删除成功")
-                compHandle.getTableData()
-            }
-        }
-    ).finally(() => {
-        compData.loading = false
+//获取所有测点
+const findAllLocationData = () => {
+    let params = {
+        LocationType: '',
+        Groups: '',
+        LocationName: '',
+    }
+    findAllLocation(params).then(res => {
+        compData.locationList = res.data.Data
+        compData.searchForm.LocationId = res.data.Data[0].LocationID
     })
 }
 
+//获取echart数据
+const getWaterBalanceData = () => {
+    setTimeout(()=>{
+        let params = {
+            LocationID: compData.searchForm.LocationId,
+            BeginDT: new Date(compData.searchForm.time).format('yyyy-MM'),
+            EndDT: new Date(compData.searchForm.time).format('yyyy-MM'),
+        }
+        GetWaterBalance(params).then( res => {
+            let timeArr = []
+            let dataArr = []
+            if (res.data && res.data.length > 0) {
+                for (let item of res.data) {
+                    timeArr.push(item.DT)
+                    dataArr.push((item.PlanData * 1 - item.ReportData * 1).toFixed(2))
+                }
+            }
+            initEchart(timeArr, dataArr)
+        })
+    },200)
+
+}
+
+//刷新echart
+const initEchart = (date ?: [],data ?: []) => {
+    const chartDom = document.getElementById("echartBox")
+    const myChart = echarts.init(chartDom)
+    let Min = -60
+    let Max = 60
+    data.filter( item => {
+        if (item > Max){
+            Max = item
+            Min > -item ? Min = -item : ''
+        }
+        if (item < Min){
+            Min = item
+            Max < -item ? Max = -item : ''
+        }
+    })
+    const option = {
+        title: {
+            text: "计划放水与实际放水差值",
+            left: 'center',
+            top: '20'
+        },
+        grid: {
+            left: "5%",
+            top: "15%",
+            right: "5%",
+            bottom: "10%"
+        },
+        xAxis: {
+            data: date,
+            splitLine: {show: false},
+            axisTick: {show: false},
+            axisLabel: {
+                show: true,
+                color: "#a4a4a4",
+            },
+            axisLine: {
+                show: true,
+                lineStyle: {
+                    color: "#ddd",
+                    width: 1,
+                    type: "solid",
+                },
+            },
+        },
+        yAxis: {
+            type: 'value',
+            name: '水量',
+            min: Min,
+            max:Max,
+            splitLine: {show: false},
+            axisTick: {show: false},
+            axisLabel: {
+                show: true,
+                color: "#a4a4a4",
+                formatter: '{value} m³'
+            },
+            axisLine: {
+                show: true,
+                lineStyle: {
+                    color: "#ddd",
+                    width: 1,
+                    type: "solid",
+                },
+            },
+        },
+        series: [
+            {
+                data: data,
+                type: "bar",
+                barWidth: 35,
+                label: {
+                    formatter: (params) => {
+                        return `${params.value}`
+                    },
+                    show: true,
+                    position: "top",
+                },
+                showBackground: true,
+                fontSize: "12px",
+                backgroundStyle: {
+                    color: "rgba(110, 193, 244, 0.05)",
+                    borderRadius: [5, 5, 0, 0],
+                },
+                itemStyle: {
+                    // 这里就可以实现，配置柱状图的颜色
+                    color: function (params) {
+                        return params.value * 1 > 0 ? "#1ec4c5" : "#fe5558"
+                    },
+                    borderRadius: [5, 5, 0, 0],
+                },
+            },
+        ]
+    }
+    myChart.setOption(option)
+}
 
 const pageContentRef = ref(null)
 const pageContentHeight = ref(0)
 onMounted(async ()=>{
     pageContentHeight.value = pageContentRef.value.offsetHeight
+    await findAllLocationData()
     await determineUserPermissions()
     await compHandle.getTableData()
+    await getWaterBalanceData()
 })
 
 </script>

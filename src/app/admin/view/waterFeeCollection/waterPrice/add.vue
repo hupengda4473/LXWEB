@@ -18,37 +18,39 @@
                 :model="compData.data"
                 :rules="rules"
             >
-                <n-form-item label="作物名称" path="CropId">
-                    <n-select
-                        v-model:value="compData.data.CropId"
-                        filterable
-                        clearable
-                        label-field="CropName"
-                        value-field="CropID"
-                        placeholder="请选择作物名称"
-                        :options="compData.cropList"
-                    />
+                <n-form-item label="年份" path="Year">
+                    <n-date-picker v-model:value="compData.data.Year" type="year" clearable placeholder="请选择年份" style="width: 100%" />
                 </n-form-item>
-                <n-form-item label="种植面积" path="PlantingArea">
-                    <n-input-number clearable v-model:value="compData.data.PlantingArea" type="text" placeholder="请输入种植面积" style="width: 100%">
+                <n-form-item label="灌溉定额" path="IrrigationQuota">
+                    <n-input-number clearable v-model:value="compData.data.IrrigationQuota" type="text" placeholder="请输入灌溉定额" style="width: 100%">
                         <template #suffix>
-                            亩
+                            m³/亩
                         </template>
                     </n-input-number>
                 </n-form-item>
-                <n-form-item label="用水单位" path="AssociationId">
-                    <n-select
-                        v-model:value="compData.data.AssociationId"
-                        filterable
-                        clearable
-                        label-field="AssociationName"
-                        value-field="ID"
-                        placeholder="请选择用水单位"
-                        :options="compData.generalOptions"
-                    />
+                <n-form-item label="标准水价" path="StandardWaterPrice">
+                    <n-input-number clearable v-model:value="compData.data.StandardWaterPrice" type="text" placeholder="请输入标准水价" style="width: 100%">
+                        <template #suffix>
+                            元/m³
+                        </template>
+                    </n-input-number>
                 </n-form-item>
-                <n-form-item label="年份" path="Year">
-                    <n-date-picker v-model:value="compData.data.Year" type="year" clearable placeholder="请选择年份" style="width: 100%" />
+                <n-form-item label="补贴标准" path="SubsidizedWaterPrice">
+                    <n-input-number clearable v-model:value="compData.data.SubsidizedWaterPrice" type="text" placeholder="请输入补贴标准" style="width: 100%">
+                        <template #suffix>
+                            元/m³
+                        </template>
+                    </n-input-number>
+                </n-form-item>
+                <n-form-item label="节水奖励" path="WaterSavingReward">
+                    <n-input-number clearable v-model:value="compData.data.WaterSavingReward" type="text" placeholder="请输入节水奖励" style="width: 100%">
+                        <template #suffix>
+                            元/亩
+                        </template>
+                    </n-input-number>
+                </n-form-item>
+                <n-form-item label="详情" path="Remark">
+                    <n-input clearable v-model:value="compData.data.Remark" type="textarea" placeholder="请输入详情" />
                 </n-form-item>
             </n-form>
             <template #footer>
@@ -65,61 +67,65 @@
 </template>
 
 <script setup lang="ts">
-import {defineEmits, defineExpose, onMounted, reactive, ref} from "vue"
+import {defineEmits, defineExpose, reactive, ref} from "vue"
 import {FormInst, useMessage} from "naive-ui"
 import {deepCopy} from "@/packages/utils/utils"
 import {formSize} from '@/app/admin/config/config'
-import {findAllCrop} from "@/app/admin/api/crop"
 import {AddWaterAssociationCrop, ModifyWaterAssociationCrop} from "@/app/admin/api/WaterAssociationCrop"
-import {FindAllWaterAssociation} from "@/app/admin/api/WaterAssociation"
+import {AddWaterPrice, ModifyWaterPrice} from "@/app/admin/api/waterFeeCollection";
 
 const message = useMessage()
 
 type AddParams = {
     ID: string | number,
-    CropId: string | number | null,
-    PlantingArea: string | number | null,
-    AssociationId: string | number | null,
+    IrrigationQuota: string | number | null,
+    StandardWaterPrice: string | number | null,
+    SubsidizedWaterPrice: string | number | null,
+    WaterSavingReward: string | number | null,
     Year: any,
 }
 type Song = {
     showAddModal: boolean,
     type: string,
-    generalOptions: object [],
     cropList: object [],
     data: AddParams
 }
 const compData = reactive<Song>({
     showAddModal: false,
     type: 'add',
-    generalOptions: [],
     cropList: [],
     data: {
         ID: 0,
-        CropId: null,
-        PlantingArea: null,
-        AssociationId: null,
+        IrrigationQuota: null,
+        StandardWaterPrice: null,
+        SubsidizedWaterPrice: null,
+        WaterSavingReward: null,
         Year: new Date().getFullYear(),
     },
 })
 
 const rules = {
-    CropId: {
-        required: true,
-        message: '请选择作物名称',
-    },
-    AssociationId: {
-        required: true,
-        message: '请选择用水单位',
-    },
-    PlantingArea: {
-        required: true,
-        message: '请输入种植面积',
-    },
     Year: {
         required: true,
         message: '请选择年份',
     },
+    StandardWaterPrice: {
+        required: true,
+        message: '请输入标准水价',
+    },
+    SubsidizedWaterPrice: {
+        required: true,
+        message: '请输入补贴标准',
+    },
+    WaterSavingReward: {
+        required: true,
+        message: '请输入节水奖励',
+    },
+    // Remark: {
+    //     required: true,
+    //     message: '请输入详情',
+    //     trigger: ['input', 'blur']
+    // },
 }
 
 const openModal = ({type = 'add', itemData = {}}: { type?: string; itemData?: object }) => {
@@ -127,9 +133,11 @@ const openModal = ({type = 'add', itemData = {}}: { type?: string; itemData?: ob
     compData.type = type
     compData.data = {
         ID: 0,
-        Ratio: null,
-        ChannelID: null,
-        Year: null,
+        IrrigationQuota: null,
+        StandardWaterPrice: null,
+        SubsidizedWaterPrice: null,
+        WaterSavingReward: null,
+        Year: new Date().getTime(),
     }
     if (type === 'edit') {
         let data = deepCopy(itemData)
@@ -148,7 +156,7 @@ const drawerConfirm = (e: MouseEvent) => {
             let params = compData.data
             params.Year = new Date(compData.data.Year).getFullYear()
             if (compData.type === 'add') {
-                AddWaterAssociationCrop( params ).then(res => {
+                AddWaterPrice( params ).then(res => {
                     if (res.data.Code === 0) {
                         message.warning("新增失败，请重试")
                     } else {
@@ -158,7 +166,7 @@ const drawerConfirm = (e: MouseEvent) => {
                     }
                 })
             } else {
-                ModifyWaterAssociationCrop( params ).then(res => {
+                ModifyWaterPrice( params ).then(res => {
                     if (res.data.Code === 0) {
                         message.warning("修改失败，请重试")
                     } else {
@@ -172,34 +180,7 @@ const drawerConfirm = (e: MouseEvent) => {
     })
 }
 
-let params = {
-    PageSize: 999999999,
-    PageIndex: 1,
-    OrderField: "",
-    OrderType: "",
-    BeginDT: "",
-    EndDT: "",
-    FuzzyName: "",
-    UserID: 1
-}
-const getWaterAssociation = () => {
-    FindAllWaterAssociation().then(res => {
-        compData.generalOptions = res.data
-    })
-}
-const findAllCropData = () => {
-    findAllCrop(params).then((res) => {
-        compData.cropList = res.data.Item1
-    })
-}
-
-
-
 defineExpose({
     openModal,
-})
-onMounted(()=>{
-    findAllCropData()
-    getWaterAssociation()
 })
 </script>

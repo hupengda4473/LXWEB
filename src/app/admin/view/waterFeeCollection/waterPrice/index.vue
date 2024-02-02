@@ -15,12 +15,7 @@
                                 <n-tab-pane name="数据查询">
                                     <n-form style="margin-bottom: -24px" label-placement="left" label-align="right" :show-label="true" ref="searchFormRef" inline :model="compData.searchForm">
                                         <n-grid cols="24" x-gap="30" item-responsive responsive="screen">
-                                            <n-grid-item span="24 m:6 l:6">
-                                                <n-form-item label="选择时间：" path="keyWord">
-                                                    <n-date-picker v-model:value="compData.searchForm.time" type="year" clearable style="width: 100%" />
-                                                </n-form-item>
-                                            </n-grid-item>
-                                            <n-grid-item span="24 m:6 l:6">
+                                            <n-grid-item span="24 m:8 l:8">
                                                 <n-form-item label="模糊搜索：" path="keyWord">
                                                     <n-input clearable v-model:value="compData.searchForm.keyWord" placeholder="请输入关键字"/>
                                                 </n-form-item>
@@ -163,7 +158,7 @@ import {Search} from "@/app/admin/untils/FuzzySearch"
 import {useMessage} from "naive-ui"
 import DeleteModal from '@/app/admin/component/deleteModal.vue'
 import AddModal from './add.vue'
-import {DeleteWaterAssociationCrop, FindAllChannelRatio} from "@/app/admin/api/WaterAssociationCrop"
+import {DeleteWaterPrice, FindAllWaterPrice} from "@/app/admin/api/waterFeeCollection"
 
 const message = useMessage()
 const appStore = appPinia()
@@ -183,7 +178,7 @@ const compData = reactive({
         keyWord: '',
         time: new Date().getTime(),
     },
-    rowKey: (row: any) => row.Id,
+    rowKey: (row: any) => row.ID,
     checkedRowKeys: [],
 })
 const compHandle = reactive({
@@ -191,30 +186,18 @@ const compHandle = reactive({
     operation: {},
     getTableData() {
         compData.loading = true
-        FindAllChannelRatio(new Date(compData.searchForm.time).getFullYear()).then((res) => {
+        FindAllWaterPrice().then((res) => {
             let data = res.data
             compData.allData = data || []
+            compData.tableData = data || []
             compHandle.filterArr = []
-            // 表格过滤
-            if (data && data.length > 0) {
-                for (let item of data) {
-                    if (!compHandle.filterArr.find(i => i.label === item.CropName) && item.CropName) {
-                        compHandle.filterArr.push({
-                            label: item.CropName,
-                            value: item.CropName
-                        })
-                    }
-                }
-            }
-            let props = ['Year', 'PlantingArea', 'AssociationName', 'CropName', 'BeginDT', 'EndDT']
-            compData.tableData  = Search(compData.searchForm.keyWord, props, deepCopy(compData.allData))
             initTable()
         }).finally(() => {
             compData.loading = false
         })
     },
     del(row: any) {
-        deleteItem(row.Id)
+        deleteItem(row.ID)
     },
     dels() {
         if (compData.checkedRowKeys.length <= 0){
@@ -242,10 +225,11 @@ const compHandle = reactive({
         compData.columns = compData.sourceColumns.filter((item) => value.indexOf(item.key) !== -1)
     },
     search() {
-        compHandle.getTableData()
+        let props = ['Year', 'PlantingArea', 'AssociationName', 'CropName', 'BeginDT', 'EndDT']
+        compData.tableData  = Search(compData.searchForm.keyWord, props, deepCopy(compData.allData))
     },
     exportData() {
-        ExportTable(compData.allData, compData.columns, '种植结构管理')
+        ExportTable(compData.allData, compData.columns, '水价管理')
     },
 })
 
@@ -269,7 +253,7 @@ const determineUserPermissions = () => {
 //删除
 const deleteItem = (ids: string | number) => {
     compData.loading = true
-    DeleteWaterAssociationCrop(ids).then(
+    DeleteWaterPrice(ids).then(
         res =>{
             if (res.data.Code === 0){
                 message.warning("删除失败，请重试")
