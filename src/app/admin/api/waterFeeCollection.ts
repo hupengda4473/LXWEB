@@ -26,6 +26,21 @@ const GetWaterBalance = (params: WaterBalance) =>{
 const FindMonthRoundReport = (params: string) =>{
     return post('/api/WaterStatistics/FindMonthRoundReport', params)
 }
+const FindAllPaymentRecord = () =>{
+    return post('/api/PaymentRecord/FindAll')
+}
+const AddPaymentRecord = (params: object) =>{
+    return post('/api/PaymentRecord/Add', params)
+}
+const ModifyPaymentRecord = (params: object) =>{
+    return post('/api/PaymentRecord/Modify', params)
+}
+const DeletePaymentRecord = (id: string | number) =>{
+    return post('/api/PaymentRecord/Delete', id)
+}
+const PaymentStatistics = (year: string) =>{
+    return post('/api/PaymentRecord/PaymentStatistics', year)
+}
 
 export {
     FindAllWaterPrice,
@@ -35,5 +50,10 @@ export {
     PayForWater,
     GetWaterBalance,
     FindMonthRoundReport,
+    FindAllPaymentRecord,
+    AddPaymentRecord,
+    ModifyPaymentRecord,
+    DeletePaymentRecord,
+    PaymentStatistics,
 }
 
