@@ -11,12 +11,12 @@ export function ExportTable(dataList, tableColumns, fileName, childColumns = [])
     for (const i in dataList) {
         const obj = {"序号": Number(i) + 1}
         for (const j in tableColumns) {
-            if (!tableColumns[j].type && tableColumns[j].type !== 'selection' && tableColumns[j].title !== '操作' && tableColumns[j].title !== '文件' && tableColumns[j].title !== '描述' && tableColumns[j].title !== '状态') {
+            if (!tableColumns[j].type && tableColumns[j].type !== 'selection' && tableColumns[j].title !== '操作' && tableColumns[j].title !== '文件' && tableColumns[j].title !== '描述' && !tableColumns[j].title.includes('状态')) {
                 const key = tableColumns[j].title
                 let value = ''
-                if (tableColumns[j].render != null) {
+                if (tableColumns[j].render) {
                     const fun = tableColumns[j].render
-                    value = fun(0, 0, dataList[i][tableColumns[j].key], 0)
+                    value = fun(dataList[i])
                 } else {
                     value = dataList[i][tableColumns[j].key]
                 }
@@ -34,7 +34,7 @@ export function ExportTable(dataList, tableColumns, fileName, childColumns = [])
                     let value = ''
                     if (tableColumns[j].render != null) {
                         const fun = tableColumns[j].render
-                        value = fun(0, 0, item[tableColumns[j].key], 0)
+                        value = fun(dataList[i])
                     } else {
                         value = item[tableColumns[j].key]
                     }

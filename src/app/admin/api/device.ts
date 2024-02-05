@@ -34,6 +34,13 @@ const addDevice = (params: AddParams) =>{
 const modifyDevice = (params: AddParams) =>{
     return post('/api/DeviceInfo/Modify', params)
 }
+interface Device{
+    GroupID: string | number,
+    Type: string,
+}
+const FindDeviceByGroupID = (params: Device) =>{
+    return post('/api/DeviceInfo/FindDeviceByGroupID', params)
+}
 
 export {
     findAllDevice,
@@ -42,5 +49,6 @@ export {
     deleteDevice,
     addDevice,
     modifyDevice,
+    FindDeviceByGroupID,
 }
 
