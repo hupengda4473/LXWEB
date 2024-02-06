@@ -24,10 +24,20 @@ interface Report {
 const FindYearReport = (params: Report) => {
     return post('/api/SluiceReport/FindYearReport', params)
 }
+interface DayReport {
+    LocationID: string | number,
+    StationID: string | number,
+    BeginDT: string,
+    EndDT: string,
+}
+const FindDayReport = (params: DayReport) => {
+    return post('/api/SluiceReport/FindDayReport', params)
+}
 
 export {
     FindSluiceDataLast,
     FindSluiceData,
     FindYearReport,
+    FindDayReport,
 }
 

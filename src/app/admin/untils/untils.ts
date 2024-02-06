@@ -102,9 +102,17 @@ const isImage = (type: string) => {
     return type === '.png' || type === '.jpg' || type === '.gif' || type === 'webp' || type.includes('image')
 }
 
+/*
+* 生成随机数
+* */
+const getRandomArbitrary = (min, max) => {
+    return (Math.random() * (max - min) + min).toFixed(2)
+}
+
 export {
     getPower,
     treeDeleteChildren,
     getPamFormat,
     isImage,
+    getRandomArbitrary,
 }

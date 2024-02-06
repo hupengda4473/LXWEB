@@ -12,7 +12,15 @@
                                 pane-style="padding: 10px;"
                             >
                                 <n-tab-pane name="数据查询">
-                                    <n-form style="margin-bottom: -24px" label-placement="left" label-align="right" :show-label="true" ref="searchFormRef" inline :model="compData.searchForm">
+                                    <n-form
+                                        style="margin-bottom: -24px"
+                                        label-placement="left"
+                                        label-align="right"
+                                        :show-label="true"
+                                        ref="searchFormRef"
+                                        inline
+                                        :model="compData.searchForm"
+                                    >
                                         <n-grid cols="24" x-gap="30" item-responsive responsive="screen">
                                             <n-grid-item span="24 m:8 l:6">
                                                 <n-form-item label="选择单位" path="">
@@ -232,6 +240,7 @@ const compHandle = reactive({
             UserID: 1
         }
         FindSluiceData(params).then((res) => {
+            compData.deviceName = compData.deviceList.find(item => item.DeviceID == compData.searchForm.deviceId).DeviceName
             let data = res.data
             compData.tableData = data || []
             compData.allData = data || []
@@ -302,7 +311,6 @@ const getDeviceListData = () => {
     FindDeviceByGroupID(params).then(async res => {
         compData.deviceList = res.data
         compData.searchForm.deviceId = res.data[0].DeviceID
-        compData.deviceName = res.data[0].DeviceName
         await compHandle.getTableData()
     })
 }
