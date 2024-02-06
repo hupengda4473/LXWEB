@@ -132,7 +132,6 @@ const compHandle = reactive({
                 for (let item of compData.allData) {
                     dateArr.push(item.ReportDT)
                     arr1.push((item.TotalWaterVolume * 1).toFixed(2))
-                    // arr1.push(getRandomArbitrary(100,1000))
                 }
             }
             initEchart(dateArr, arr1)
