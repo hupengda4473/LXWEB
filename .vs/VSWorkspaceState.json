@@ -1,0 +1,13 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\src",
+    "\\src\\app",
+    "\\src\\app\\admin",
+    "\\src\\app\\admin\\view",
+    "\\src\\app\\admin\\view\\basicData",
+    "\\src\\app\\admin\\view\\basicData\\irrigated"
+  ],
+  "SelectedNode": "\\src\\app\\admin\\view\\basicData\\irrigated\\add.vue",
+  "PreviewInSolutionExplorer": false
+}
