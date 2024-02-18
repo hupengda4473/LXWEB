@@ -97,9 +97,9 @@
 import {onMounted, reactive, ref} from "vue"
 import { btnConfig, formSize } from '@/app/admin/config/config.js'
 import {renderIcon} from '@/packages/config/icon.ts'
-import {FindDayReport, FindSluiceData} from "@/app/admin/api/sluiceGate"
+import {FindDayReport} from "@/app/admin/api/sluiceGate"
 import {getTree} from "@/app/admin/api/institution"
-import {getRandomArbitrary, treeDeleteChildren} from "@/app/admin/untils/untils"
+import {treeDeleteChildren} from "@/app/admin/untils/untils"
 import {FindDeviceByGroupID} from "@/app/admin/api/device"
 import * as echarts from "echarts"
 
